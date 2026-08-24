@@ -12,3 +12,5 @@ Current keys:
 - space, backspace, enter, and a key for switching to the next installed keyboard
 
 Install the APK, open **Math Characters**, enable the input method in Android settings, then use **Choose keyboard now** to select it.
+
+The pull-request workflow builds the debug APK and uploads it as `math-characters-debug-apk`.
