@@ -24,7 +24,7 @@ There is no Unicode database, search UI, network access, account, clipboard hist
 
 ## Build
 
-Requires JDK 17, Android SDK 37, and Gradle 9.5.0.
+Requires JDK 17, Android SDK 36, and Gradle 9.5.0.
 
 ```sh
 gradle -p math-characters testDebugUnitTest assembleDebug
