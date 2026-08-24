@@ -47,5 +47,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: math-characters-debug-apk
-          path: 'math characters/build/outputs/apk/debug/math characters-debug.apk'
+          path: 'math characters/build/outputs/apk/debug/math-characters-debug.apk'
           if-no-files-found: error
