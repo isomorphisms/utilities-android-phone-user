@@ -13,9 +13,7 @@ public final class MathCharactersTest {
         assertArrayEquals(new String[] {"i", "j", "k"}, MathCharacters.ROWS[2]);
         assertEquals("0", MathCharacters.ROWS[3][0]);
         assertEquals("9", MathCharacters.ROWS[3][9]);
-        assertEquals("⁰", MathCharacters.ROWS[4][0]);
-        assertEquals("ⁿ", MathCharacters.ROWS[4][15]);
-        assertEquals("₀", MathCharacters.ROWS[5][0]);
-        assertEquals("₎", MathCharacters.ROWS[5][14]);
+        assertArrayEquals(new String[] {"⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹", "⁺", "⁻", "⁼", "⁽", "⁾", "ⁱ", "ʲ", "ᵏ", "ˡ", "ⁿ"}, MathCharacters.ROWS[4]);
+        assertArrayEquals(new String[] {"₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉", "₊", "₋", "₌", "₍", "₎", "ᵢ", "ⱼ", "ₖ", "ₗ"}, MathCharacters.ROWS[5]);
     }
 }
