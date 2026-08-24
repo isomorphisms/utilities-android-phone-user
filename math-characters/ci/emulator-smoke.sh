@@ -29,11 +29,13 @@ height=$2
 adb shell input tap $((width / 14)) $((height * 38 / 100))
 adb shell input tap $((width * 11 / 12)) $((height * 25 / 100))
 adb shell input tap $((width * 91 / 100)) $((height * 7 / 100))
-sleep 1
 adb shell input tap $((width / 8)) $((height * 48 / 100))
 sleep 1
 
 test -n "$(adb shell pidof "$package" | tr -d '\r')"
+state_log=$(adb logcat -d -s ProgrammersUnicodePad:I '*:S')
+printf '%s\n' "$state_log"
+printf '%s\n' "$state_log" | grep -F 'page=Math bytes=4' >/dev/null
 adb exec-out screencap -p > "$screenshot"
 test "$(wc -c < "$screenshot")" -gt 10000
 
