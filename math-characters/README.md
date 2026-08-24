@@ -8,8 +8,8 @@ A deliberately restricted Android software keyboard for the small set of mathema
 - number sets and infinity: `ℂ ℝ ℚ ℤ ℕ ∞`
 - basis / imaginary letters: `i j k`
 - ordinary digits: `0 1 2 3 4 5 6 7 8 9`
-- superscripts: `⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁽ ⁾ ⁿ`
-- subscripts: `₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₊ ₋ ₌ ₍ ₎`
+- superscripts: `⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁽ ⁾ ⁱ ʲ ᵏ ˡ ⁿ`
+- subscripts: `₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₊ ₋ ₌ ₍ ₎ ᵢ ⱼ ₖ ₗ`
 - editing: space, backspace, enter, and an IME picker button
 
 There is no Unicode database, search UI, network access, account, clipboard history, or predictive text.
