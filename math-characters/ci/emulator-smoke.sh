@@ -28,7 +28,8 @@ height=$2
 # Tap the first Unicode key, COPY, the next-layout control, and a Math key.
 adb shell input tap $((width / 14)) $((height * 38 / 100))
 adb shell input tap $((width * 11 / 12)) $((height * 25 / 100))
-adb shell input tap $((width * 91 / 100)) $((height * 4 / 100))
+adb shell input tap $((width * 91 / 100)) $((height * 7 / 100))
+sleep 1
 adb shell input tap $((width / 8)) $((height * 48 / 100))
 sleep 1
 
