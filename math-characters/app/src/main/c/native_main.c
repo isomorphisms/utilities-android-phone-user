@@ -56,6 +56,39 @@ typedef struct {
     jmethodID paint_descent;
 } CanvasSession;
 
+typedef struct {
+    float left;
+    float top;
+    float width;
+    float height;
+} Viewport;
+
+static Viewport content_viewport(const struct android_app *app) {
+    const float window_width = (float)ANativeWindow_getWidth(app->window);
+    const float window_height = (float)ANativeWindow_getHeight(app->window);
+    const int32_t content_width = app->contentRect.right - app->contentRect.left;
+    const int32_t content_height = app->contentRect.bottom - app->contentRect.top;
+    if (content_width <= 0 || content_height <= 0) {
+        const Viewport full_window = {0.0f, 0.0f, window_width, window_height};
+        return full_window;
+    }
+    const Viewport content = {
+        (float)app->contentRect.left,
+        (float)app->contentRect.top,
+        (float)content_width,
+        (float)content_height,
+    };
+    return content;
+}
+
+static PadRect place_in_viewport(PadRect rect, Viewport viewport) {
+    rect.left += viewport.left;
+    rect.right += viewport.left;
+    rect.top += viewport.top;
+    rect.bottom += viewport.top;
+    return rect;
+}
+
 static bool attach_environment(ANativeActivity *activity, JNIEnv **environment,
                                bool *detach) {
     *detach = false;
@@ -361,22 +394,27 @@ static void render(AppContext *context) {
     if (!begin_canvas(context, &session)) {
         return;
     }
-    const float width = (float)ANativeWindow_getWidth(context->app->window);
-    const float height = (float)ANativeWindow_getHeight(context->app->window);
+    const Viewport viewport = content_viewport(context->app);
+    const float width = viewport.width;
+    const float height = viewport.height;
     const PadLayout *layout = pad_layout_at(context->layout_index);
     (*session.env)->CallVoidMethod(session.env, session.canvas, session.draw_color,
                                    (jint)COLOR_BACKGROUND);
 
-    const PadRect previous = pad_ui_previous_layout_rect(width, height);
-    const PadRect next = pad_ui_next_layout_rect(width, height);
+    const PadRect previous = place_in_viewport(
+        pad_ui_previous_layout_rect(width, height), viewport);
+    const PadRect next = place_in_viewport(
+        pad_ui_next_layout_rect(width, height), viewport);
     draw_button(&session, previous, COLOR_ACTION);
     draw_button(&session, next, COLOR_ACTION);
     draw_centered_text(&session, previous, "◀", 34.0f, COLOR_TEXT);
     draw_centered_text(&session, next, "▶", 34.0f, COLOR_TEXT);
-    draw_centered_text(&session, pad_ui_title_rect(width, height), layout->name,
-                       31.0f, COLOR_ACCENT);
+    draw_centered_text(&session,
+                       place_in_viewport(pad_ui_title_rect(width, height), viewport),
+                       layout->name, 31.0f, COLOR_ACCENT);
 
-    const PadRect buffer = pad_ui_buffer_rect(width, height);
+    const PadRect buffer = place_in_viewport(
+        pad_ui_buffer_rect(width, height), viewport);
     draw_button(&session, buffer, COLOR_PANEL);
     char display[640];
     make_buffer_display(&context->state, display, sizeof(display));
@@ -384,16 +422,19 @@ static void render(AppContext *context) {
 
     static const char *toolbar_labels[] = {"←", "→", "⌫", "UNDO", "CLEAR", "COPY"};
     for (size_t index = 0; index < sizeof(toolbar_labels) / sizeof(toolbar_labels[0]); ++index) {
-        const PadRect rect = pad_ui_toolbar_rect(width, height, index);
+        const PadRect rect = place_in_viewport(
+            pad_ui_toolbar_rect(width, height, index), viewport);
         draw_button(&session, rect, index == 5u ? COLOR_ACTION : COLOR_KEY);
         draw_centered_text(&session, rect, toolbar_labels[index], 25.0f, COLOR_TEXT);
     }
-    draw_centered_text(&session, pad_ui_status_rect(width, height),
-                       context->state.status, 18.0f, COLOR_MUTED);
+    draw_centered_text(
+        &session, place_in_viewport(pad_ui_status_rect(width, height), viewport),
+        context->state.status, 18.0f, COLOR_MUTED);
 
     for (size_t row = 0; row < layout->row_count; ++row) {
         for (size_t column = 0; column < layout->rows[row].key_count; ++column) {
-            const PadRect rect = pad_ui_key_rect(width, height, layout, row, column);
+            const PadRect rect = place_in_viewport(
+                pad_ui_key_rect(width, height, layout, row, column), viewport);
             draw_button(&session, rect, COLOR_KEY);
             draw_centered_text(&session, inset(rect, 3.0f),
                                layout->rows[row].keys[column].label,
@@ -517,12 +558,11 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event) {
     if (action != AMOTION_EVENT_ACTION_UP) {
         return 1;
     }
-    const float width = (float)ANativeWindow_getWidth(app->window);
-    const float height = (float)ANativeWindow_getHeight(app->window);
-    const float x = AMotionEvent_getX(event, 0u);
-    const float y = AMotionEvent_getY(event, 0u);
+    const Viewport viewport = content_viewport(app);
+    const float x = AMotionEvent_getX(event, 0u) - viewport.left;
+    const float y = AMotionEvent_getY(event, 0u) - viewport.top;
     const PadLayout *layout = pad_layout_at(context->layout_index);
-    apply_hit(context, pad_ui_hit_test(width, height, layout, x, y));
+    apply_hit(context, pad_ui_hit_test(viewport.width, viewport.height, layout, x, y));
     return 1;
 }
 
