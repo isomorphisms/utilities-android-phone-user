@@ -32,14 +32,16 @@ adb shell input tap $((width * 91 / 100)) $((height * 7 / 100))
 adb shell input tap $((width / 8)) $((height * 48 / 100))
 sleep 1
 
-test -n "$(adb shell pidof "$package" | tr -d '\r')"
-state_log=$(adb logcat -d -s ProgrammersUnicodePad:I '*:S')
+app_pid=$(adb shell pidof "$package" | tr -d '\r')
+test -n "$app_pid"
+state_log=$(adb logcat -d --pid="$app_pid" -s ProgrammersUnicodePad:I '*:S')
 printf '%s\n' "$state_log"
 printf '%s\n' "$state_log" | grep -F 'page=Math bytes=4' >/dev/null
 adb exec-out screencap -p > "$screenshot"
 test "$(wc -c < "$screenshot")" -gt 10000
 
-fatal_log=$(adb logcat -d -s AndroidRuntime:E libc:F DEBUG:F ProgrammersUnicodePad:E)
+fatal_log=$(adb logcat -d --pid="$app_pid" \
+    -s AndroidRuntime:E libc:F DEBUG:F ProgrammersUnicodePad:E '*:S')
 if printf '%s\n' "$fatal_log" | grep -E 'FATAL EXCEPTION|Fatal signal|Abort message' >/dev/null; then
     printf '%s\n' "$fatal_log" >&2
     exit 1
