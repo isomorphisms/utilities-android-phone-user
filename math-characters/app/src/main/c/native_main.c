@@ -17,6 +17,7 @@
 
 #define LOG_TAG "ProgrammersUnicodePad"
 #define LOG_ERROR(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define LOG_INFO(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 static const int32_t COLOR_BACKGROUND = (int32_t)0xFF101318u;
 static const int32_t COLOR_PANEL = (int32_t)0xFF1A2028u;
@@ -559,10 +560,18 @@ static int32_t handle_input(struct android_app *app, AInputEvent *event) {
         return 1;
     }
     const Viewport viewport = content_viewport(app);
-    const float x = AMotionEvent_getX(event, 0u) - viewport.left;
-    const float y = AMotionEvent_getY(event, 0u) - viewport.top;
+    const float raw_x = AMotionEvent_getX(event, 0u);
+    const float raw_y = AMotionEvent_getY(event, 0u);
+    const float x = raw_x - viewport.left;
+    const float y = raw_y - viewport.top;
     const PadLayout *layout = pad_layout_at(context->layout_index);
-    apply_hit(context, pad_ui_hit_test(viewport.width, viewport.height, layout, x, y));
+    const PadHit hit = pad_ui_hit_test(viewport.width, viewport.height, layout, x, y);
+    apply_hit(context, hit);
+    LOG_INFO("touch raw=%.0f,%.0f local=%.0f,%.0f viewport=%.0f,%.0f %.0fx%.0f "
+             "hit=%d page=%s bytes=%zu",
+             raw_x, raw_y, x, y, viewport.left, viewport.top,
+             viewport.width, viewport.height, (int)hit.kind,
+             pad_layout_at(context->layout_index)->name, context->state.length);
     return 1;
 }
 
