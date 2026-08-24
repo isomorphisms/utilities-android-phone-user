@@ -30,4 +30,6 @@ Requires JDK 17, Android SDK 36, and Gradle 9.5.0.
 gradle -p math-characters testDebugUnitTest assembleDebug
 ```
 
-The separate `math-characters-picker` branch explores the UnicodePad-style standalone picker. This branch stays focused on the IME.
+Pull-request CI runs the unit test, builds the debug APK, and uploads it as `math-characters-debug-apk`.
+
+The separate `math-characters-picker` branch explores the UnicodePad-style standalone picker. This project stays focused on the IME.
