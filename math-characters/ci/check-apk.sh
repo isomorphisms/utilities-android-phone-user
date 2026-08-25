@@ -28,6 +28,7 @@ done
 
 badging=$($build_tools/aapt2 dump badging "$apk")
 printf '%s\n' "$badging" | grep -F "package: name='com.isomorphisms.programmersunicodepad'" >/dev/null
+printf '%s\n' "$badging" | grep -F "versionCode='3' versionName='0.3.0'" >/dev/null
 printf '%s\n' "$badging" | grep -F "launchable-activity: name='android.app.NativeActivity'" >/dev/null
 
 permissions=$($build_tools/aapt2 dump permissions "$apk")

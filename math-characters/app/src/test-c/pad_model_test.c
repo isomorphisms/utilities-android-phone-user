@@ -34,11 +34,27 @@ static void apply(PadState *state, const char *layout, const char *label) {
     (void)pad_apply_key(state, key);
 }
 
+static size_t key_text_count(const char *text) {
+    size_t count = 0u;
+    for (size_t layout_index = 0; layout_index < pad_layout_count(); ++layout_index) {
+        const PadLayout *layout = pad_layout_at(layout_index);
+        for (size_t row = 0; row < layout->row_count; ++row) {
+            for (size_t column = 0; column < layout->rows[row].key_count; ++column) {
+                const char *output = layout->rows[row].keys[column].text;
+                if (output != NULL && strcmp(output, text) == 0) {
+                    ++count;
+                }
+            }
+        }
+    }
+    return count;
+}
+
 static void test_layout_contract(void) {
     static const char *expected_names[] = {
-        "Unicode", "Math", "Programming", "Regular Expressions",
-        "Concept Separation", "Movement", "Incantation Assistance",
-        "Several Pastebins", "Signals",
+        "Unicode", "Math", "Punctuation", "Programming",
+        "Regular Expressions", "Concept Separation",
+        "Incantation Assistance", "Several Pastebins",
     };
     assert(pad_layout_count() == sizeof(expected_names) / sizeof(expected_names[0]));
     for (size_t index = 0; index < pad_layout_count(); ++index) {
@@ -65,11 +81,18 @@ static void test_layout_contract(void) {
     assert(key_labeled("Programming", "⟦ ⟧\nEVALUATE") != NULL);
     assert(key_labeled("Programming", "≝\nDEFINE") != NULL);
     assert(key_labeled("Math", "−\nSUBTRACT") != NULL);
+    assert(key_labeled("Punctuation", "–\nEN DASH") != NULL);
+    assert(key_labeled("Punctuation", "—\nEM DASH") != NULL);
+    assert(key_labeled("Punctuation", "\"\nQUOTE") != NULL);
     assert(key_labeled("Concept Separation", "QUAD\nSPACE") != NULL);
     assert(key_labeled("Concept Separation", "THIN\nSPACE") != NULL);
     assert(key_labeled("Regular Expressions", "INCANTATION RUNES\nCONTROL CHARACTERS") != NULL);
-    assert(key_labeled("Movement", "29×") != NULL);
-    assert(key_labeled("Signals", "KILL PROGRAM\nSIGKILL TOKEN") != NULL);
+    assert(key_labeled("Incantation Assistance", "CHANT\nHISTORY") == NULL);
+    assert(layout_named("Movement") == NULL);
+    assert(layout_named("Signals") == NULL);
+    assert(key_text_count("λ") >= 2u);
+    assert(key_text_count("←") >= 3u);
+    assert(key_text_count("→") >= 3u);
 }
 
 static void test_unicode_editing(void) {
@@ -109,6 +132,33 @@ static void test_paired_insertion(void) {
     assert(strcmp(regex.text, "(\\d)") == 0);
 }
 
+static void test_punctuation(void) {
+    PadState state;
+    pad_state_init(&state);
+    apply(&state, "Punctuation", "−\nMINUS");
+    apply(&state, "Punctuation", "–\nEN DASH");
+    apply(&state, "Punctuation", "—\nEM DASH");
+    apply(&state, "Punctuation", "…\nELLIPSIS");
+    assert(strcmp(state.text, "−–—…") == 0);
+
+    const PadLayout *punctuation = layout_named("Punctuation");
+    assert(punctuation != NULL);
+    for (size_t row = 0; row < punctuation->row_count; ++row) {
+        for (size_t column = 0; column < punctuation->rows[row].key_count; ++column) {
+            const char *output = punctuation->rows[row].keys[column].text;
+            assert(output == NULL || strcmp(output, "-") != 0);
+        }
+    }
+
+    PadState quotes;
+    pad_state_init(&quotes);
+    apply(&quotes, "Punctuation", "“ ”\nPAIR");
+    assert(strcmp(quotes.text, "“”") == 0);
+    assert(quotes.cursor == strlen("“"));
+    apply(&quotes, "Math", "λ");
+    assert(strcmp(quotes.text, "“λ”") == 0);
+}
+
 static void test_exact_spaces(void) {
     PadState state;
     pad_state_init(&state);
@@ -123,31 +173,38 @@ static void test_exact_spaces(void) {
     assert(pad_is_valid_utf8(state.text));
 }
 
-static void test_repeat_movement_and_undo(void) {
+static void test_editing_actions_and_undo(void) {
     PadState state;
     pad_state_init(&state);
-    apply(&state, "Movement", "7×");
-    apply(&state, "Math", "+\nADD");
+    const PadKey repeat = {"repeat", PAD_SET_REPEAT, NULL, 7u};
+    const PadKey add = {"add", PAD_INSERT, "+", 0u};
+    const PadKey undo = {"undo", PAD_UNDO, NULL, 0u};
+    assert(pad_apply_key(&state, &repeat));
+    assert(pad_apply_key(&state, &add));
     assert(strcmp(state.text, "+++++++") == 0);
     assert(state.repeat_count == 1u);
-    apply(&state, "Movement", "UNDO");
+    assert(pad_apply_key(&state, &undo));
     assert(strcmp(state.text, "") == 0);
-    apply(&state, "Movement", "UNDO");
+    assert(pad_apply_key(&state, &undo));
     assert(strcmp(state.text, "+++++++") == 0);
 
     const PadKey newline_text = {"fixture", PAD_INSERT, "\nabc\ndef", 0u};
     assert(pad_apply_key(&state, &newline_text));
-    apply(&state, "Movement", "PREVIOUS\nLINE");
+    const PadKey previous_line_key = {"previous line", PAD_PREVIOUS_LINE, NULL, 0u};
+    const PadKey next_line_key = {"next line", PAD_NEXT_LINE, NULL, 0u};
+    const PadKey line_start_key = {"line start", PAD_LINE_START, NULL, 0u};
+    const PadKey line_end_key = {"line end", PAD_LINE_END, NULL, 0u};
+    assert(pad_apply_key(&state, &previous_line_key));
     const size_t previous = state.cursor;
-    apply(&state, "Movement", "NEXT\nLINE");
+    assert(pad_apply_key(&state, &next_line_key));
     assert(state.cursor > previous);
-    apply(&state, "Movement", "START\nLINE");
+    assert(pad_apply_key(&state, &line_start_key));
     assert(state.cursor == state.length - strlen("def"));
-    apply(&state, "Movement", "END\nLINE");
+    assert(pad_apply_key(&state, &line_end_key));
     assert(state.cursor == state.length);
 }
 
-static void test_pastebins_and_history(void) {
+static void test_pastebins_and_completion(void) {
     PadState state;
     pad_state_init(&state);
     const PadKey alpha = {"alpha", PAD_INSERT, "α", 0u};
@@ -159,17 +216,12 @@ static void test_pastebins_and_history(void) {
     assert(strcmp(state.text, "α") == 0);
     pad_mark_copied(&state);
     assert(strcmp(state.copied_text, "α") == 0);
-    assert(pad_apply_key(&state, &clear));
-    apply(&state, "Incantation Assistance", "CHANT\nHISTORY");
-    assert(strcmp(state.text, "α") == 0);
-}
 
-static void test_signal_safety(void) {
-    PadState state;
-    pad_state_init(&state);
-    apply(&state, "Signals", "KILL PROGRAM\nSIGKILL TOKEN");
-    assert(strcmp(state.text, "SIGKILL") == 0);
-    assert(strstr(state.status, "no process signal") != NULL);
+    PadState completion;
+    pad_state_init(&completion);
+    apply(&completion, "Incantation Assistance", "TAB /\nCOMPLETE");
+    apply(&completion, "Incantation Assistance", "FINISH\nINCANTATION");
+    assert(strcmp(completion.text, "\t\n") == 0);
 }
 
 static void test_capacity_is_atomic(void) {
@@ -201,10 +253,10 @@ int main(void) {
     test_layout_contract();
     test_unicode_editing();
     test_paired_insertion();
+    test_punctuation();
     test_exact_spaces();
-    test_repeat_movement_and_undo();
-    test_pastebins_and_history();
-    test_signal_safety();
+    test_editing_actions_and_undo();
+    test_pastebins_and_completion();
     test_capacity_is_atomic();
     test_utf8_rejection();
     puts("pad_model_test: all checks passed");

@@ -15,6 +15,13 @@ static const PadKey unicode_arrows[] = {
     KEY("↔", PAD_INSERT, "↔", 0), KEY("↦", PAD_INSERT, "↦", 0),
     KEY("⇒", PAD_INSERT, "⇒", 0),
 };
+static const PadKey unicode_extended_arrows[] = {
+    KEY("⟵", PAD_INSERT, "⟵", 0), KEY("⟶", PAD_INSERT, "⟶", 0),
+    KEY("⟻", PAD_INSERT, "⟻", 0), KEY("⟼", PAD_INSERT, "⟼", 0),
+    KEY("↩", PAD_INSERT, "↩", 0), KEY("↪", PAD_INSERT, "↪", 0),
+    KEY("↞", PAD_INSERT, "↞", 0), KEY("↠", PAD_INSERT, "↠", 0),
+    KEY("⟳", PAD_INSERT, "⟳", 0), KEY("⟲", PAD_INSERT, "⟲", 0),
+};
 static const PadKey unicode_sets[] = {
     KEY("ℂ", PAD_INSERT, "ℂ", 0), KEY("ℝ", PAD_INSERT, "ℝ", 0),
     KEY("ℚ", PAD_INSERT, "ℚ", 0), KEY("ℤ", PAD_INSERT, "ℤ", 0),
@@ -58,7 +65,7 @@ static const PadKey unicode_subscript_letters[] = {
     KEY("ₗ", PAD_INSERT, "ₗ", 0),
 };
 static const PadRow unicode_rows[] = {
-    ROW(unicode_arrows), ROW(unicode_sets), ROW(unicode_digits),
+    ROW(unicode_arrows), ROW(unicode_extended_arrows), ROW(unicode_sets), ROW(unicode_digits),
     ROW(unicode_superscript_digits), ROW(unicode_superscript_letters),
     ROW(unicode_subscript_digits), ROW(unicode_subscript_letters),
 };
@@ -75,7 +82,50 @@ static const PadKey math_row_2[] = {
     KEY("<", PAD_INSERT, "<", 0), KEY("≤", PAD_INSERT, "≤", 0),
     KEY(">", PAD_INSERT, ">", 0), KEY("≥", PAD_INSERT, "≥", 0),
 };
-static const PadRow math_rows[] = {ROW(math_row_1), ROW(math_row_2)};
+static const PadKey math_row_3[] = {
+    KEY("λ", PAD_INSERT, "λ", 0), KEY("χ", PAD_INSERT, "χ", 0),
+    KEY("←", PAD_INSERT, "←", 0), KEY("→", PAD_INSERT, "→", 0),
+    KEY("↦", PAD_INSERT, "↦", 0), KEY("⇒", PAD_INSERT, "⇒", 0),
+};
+static const PadRow math_rows[] = {
+    ROW(math_row_1), ROW(math_row_2), ROW(math_row_3),
+};
+
+static const PadKey punctuation_dashes[] = {
+    KEY("−\nMINUS", PAD_INSERT, "−", 0),
+    KEY("–\nEN DASH", PAD_INSERT, "–", 0),
+    KEY("—\nEM DASH", PAD_INSERT, "—", 0),
+    KEY("…\nELLIPSIS", PAD_INSERT, "…", 0),
+};
+static const PadKey punctuation_sentence[] = {
+    KEY(".", PAD_INSERT, ".", 0), KEY(",", PAD_INSERT, ",", 0),
+    KEY(":", PAD_INSERT, ":", 0), KEY(";", PAD_INSERT, ";", 0),
+    KEY("?", PAD_INSERT, "?", 0), KEY("!", PAD_INSERT, "!", 0),
+};
+static const PadKey punctuation_quotes[] = {
+    KEY("\"\nQUOTE", PAD_INSERT, "\"", 0),
+    KEY("'\nAPOSTROPHE", PAD_INSERT, "'", 0),
+    KEY("`\nBACKTICK", PAD_INSERT, "`", 0),
+    KEY("“ ”\nPAIR", PAD_INSERT_PAIR, "“”", 0),
+    KEY("‘ ’\nPAIR", PAD_INSERT_PAIR, "‘’", 0),
+    KEY("« »\nPAIR", PAD_INSERT_PAIR, "«»", 0),
+};
+static const PadKey punctuation_pairs[] = {
+    KEY("( )\nPAIR", PAD_INSERT_PAIR, "()", 0),
+    KEY("[ ]\nPAIR", PAD_INSERT_PAIR, "[]", 0),
+    KEY("{ }\nPAIR", PAD_INSERT_PAIR, "{}", 0),
+    KEY("⟨ ⟩\nPAIR", PAD_INSERT_PAIR, "⟨⟩", 0),
+    KEY("⟦ ⟧\nPAIR", PAD_INSERT_PAIR, "⟦⟧", 0),
+};
+static const PadKey punctuation_separators[] = {
+    KEY("/", PAD_INSERT, "/", 0), KEY("\\", PAD_INSERT, "\\", 0),
+    KEY("|", PAD_INSERT, "|", 0), KEY("_", PAD_INSERT, "_", 0),
+    KEY("@", PAD_INSERT, "@", 0), KEY("#", PAD_INSERT, "#", 0),
+};
+static const PadRow punctuation_rows[] = {
+    ROW(punctuation_dashes), ROW(punctuation_sentence), ROW(punctuation_quotes),
+    ROW(punctuation_pairs), ROW(punctuation_separators),
+};
 
 static const PadKey programming_row_1[] = {
     KEY("{", PAD_INSERT, "{", 0), KEY("(", PAD_INSERT, "(", 0),
@@ -163,45 +213,9 @@ static const PadRow separation_rows[] = {
     ROW(separation_row_1), ROW(separation_row_2),
 };
 
-static const PadKey movement_row_1[] = {
-    KEY("MVMT", PAD_MODE_MOVEMENT, NULL, 0),
-    KEY("TYPE", PAD_MODE_TYPE, NULL, 0),
-    KEY("PREVIOUS\nLINE", PAD_PREVIOUS_LINE, NULL, 0),
-    KEY("NEXT\nLINE", PAD_NEXT_LINE, NULL, 0),
-};
-static const PadKey movement_row_2[] = {
-    KEY("LONG\n←", PAD_MOVE_LEFT, NULL, 7),
-    KEY("LONG\n→", PAD_MOVE_RIGHT, NULL, 7),
-    KEY("START\nLINE", PAD_LINE_START, NULL, 0),
-    KEY("END\nLINE", PAD_LINE_END, NULL, 0),
-};
-static const PadKey movement_row_3[] = {
-    KEY("NEXT\nWORD", PAD_NEXT_WORD, NULL, 0),
-    KEY("NEXT SPACE-\nSEPARATED WORD", PAD_NEXT_WORD, NULL, 0),
-    KEY("MATCH\nDELIMITER", PAD_MATCH_DELIMITER, NULL, 0),
-};
-static const PadKey movement_row_4[] = {
-    KEY("⅓ PAGE\nUP", PAD_PAGE_UP, NULL, 0),
-    KEY("⅓ PAGE\nDOWN", PAD_PAGE_DOWN, NULL, 0),
-    KEY("7×", PAD_SET_REPEAT, NULL, 7), KEY("13×", PAD_SET_REPEAT, NULL, 13),
-    KEY("17×", PAD_SET_REPEAT, NULL, 17), KEY("29×", PAD_SET_REPEAT, NULL, 29),
-};
-static const PadKey movement_row_5[] = {
-    KEY("REPEAT\nFORWARD", PAD_REPEAT_FORWARD, NULL, 0),
-    KEY("REPEAT\nBACK", PAD_REPEAT_BACKWARD, NULL, 0),
-    KEY("DELETE\nCHAR ←", PAD_BACKSPACE, NULL, 0),
-    KEY("DELETE\nWORD", PAD_DELETE_WORD, NULL, 0),
-    KEY("UNDO", PAD_UNDO, NULL, 0),
-};
-static const PadRow movement_rows[] = {
-    ROW(movement_row_1), ROW(movement_row_2), ROW(movement_row_3),
-    ROW(movement_row_4), ROW(movement_row_5),
-};
-
 static const PadKey incantation_row[] = {
     KEY("TAB /\nCOMPLETE", PAD_INSERT, "\t", 0),
     KEY("FINISH\nINCANTATION", PAD_INSERT, "\n", 0),
-    KEY("CHANT\nHISTORY", PAD_CHANT_HISTORY, NULL, 0),
 };
 static const PadRow incantation_rows[] = {ROW(incantation_row)};
 
@@ -222,28 +236,15 @@ static const PadRow pastebin_rows[] = {
     ROW(pastebin_row_1), ROW(pastebin_row_2), ROW(pastebin_row_3),
 };
 
-static const PadKey signals_row_1[] = {
-    KEY("QUIT PROGRAM\nSIGINT TOKEN", PAD_INSERT_TOKEN, "SIGINT", 0),
-    KEY("SLEEP PROGRAM\nSIGTSTP TOKEN", PAD_INSERT_TOKEN, "SIGTSTP", 0),
-    KEY("WAKE PROGRAM\nSIGCONT TOKEN", PAD_INSERT_TOKEN, "SIGCONT", 0),
-};
-static const PadKey signals_row_2[] = {
-    KEY("SHUTDOWN\nSIGTERM TOKEN", PAD_INSERT_TOKEN, "SIGTERM", 0),
-    KEY("QUIT AND DUMP\nSIGQUIT TOKEN", PAD_INSERT_TOKEN, "SIGQUIT", 0),
-    KEY("KILL PROGRAM\nSIGKILL TOKEN", PAD_INSERT_TOKEN, "SIGKILL", 0),
-};
-static const PadRow signals_rows[] = {ROW(signals_row_1), ROW(signals_row_2)};
-
 static const PadLayout layouts[] = {
     {"Unicode", unicode_rows, COUNT_OF(unicode_rows)},
     {"Math", math_rows, COUNT_OF(math_rows)},
+    {"Punctuation", punctuation_rows, COUNT_OF(punctuation_rows)},
     {"Programming", programming_rows, COUNT_OF(programming_rows)},
     {"Regular Expressions", regex_rows, COUNT_OF(regex_rows)},
     {"Concept Separation", separation_rows, COUNT_OF(separation_rows)},
-    {"Movement", movement_rows, COUNT_OF(movement_rows)},
     {"Incantation Assistance", incantation_rows, COUNT_OF(incantation_rows)},
     {"Several Pastebins", pastebin_rows, COUNT_OF(pastebin_rows)},
-    {"Signals", signals_rows, COUNT_OF(signals_rows)},
 };
 
 static void set_status(PadState *state, const char *message) {

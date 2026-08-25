@@ -55,7 +55,7 @@ unsigned_apk="$work_dir/unsigned.apk"
 aligned_apk="$work_dir/aligned.apk"
 final_apk="$output_dir/app-debug.apk"
 
-"$build_tools/aapt2" link -I "$platform_jar" --manifest "$project_dir/app/src/main/AndroidManifest.xml" --min-sdk-version 26 --target-sdk-version 36 --version-code 2 --version-name 0.2.0 -o "$base_apk"
+"$build_tools/aapt2" link -I "$platform_jar" --manifest "$project_dir/app/src/main/AndroidManifest.xml" --min-sdk-version 26 --target-sdk-version 36 --version-code 3 --version-name 0.3.0 -o "$base_apk"
 cp "$base_apk" "$unsigned_apk"
 (
     cd "$staging_dir"
@@ -64,9 +64,17 @@ cp "$base_apk" "$unsigned_apk"
 
 "$build_tools/zipalign" -f -P 16 4 "$unsigned_apk" "$aligned_apk"
 
-keystore="$work_dir/debug.keystore"
-keytool -genkeypair -noprompt -keystore "$keystore" -storepass android -keypass android -alias androiddebugkey -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
+keystore=${ANDROID_KEYSTORE:-$work_dir/debug.keystore}
+keystore_password=${ANDROID_KEYSTORE_PASSWORD:-android}
+key_password=${ANDROID_KEY_PASSWORD:-$keystore_password}
+key_alias=${ANDROID_KEY_ALIAS:-androiddebugkey}
+if [ -z "${ANDROID_KEYSTORE:-}" ]; then
+    keytool -genkeypair -noprompt -keystore "$keystore" -storepass "$keystore_password" -keypass "$key_password" -alias "$key_alias" -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 >/dev/null 2>&1
+elif [ ! -f "$keystore" ]; then
+    echo "missing Android signing keystore: $keystore" >&2
+    exit 2
+fi
 
-"$build_tools/apksigner" sign --ks "$keystore" --ks-pass pass:android --key-pass pass:android --out "$final_apk" "$aligned_apk"
+"$build_tools/apksigner" sign --ks "$keystore" --ks-key-alias "$key_alias" --ks-pass "pass:$keystore_password" --key-pass "pass:$key_password" --out "$final_apk" "$aligned_apk"
 
 echo "$final_apk"

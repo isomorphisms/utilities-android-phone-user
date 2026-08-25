@@ -14,22 +14,23 @@ Android's platform-provided `NativeActivity`, `Canvas`, and clipboard service su
 
 ## Pages
 
-The first page keeps the earlier Math Characters set: arrows, number sets, ordinary digits, superscripts, and subscripts.
+The first page keeps the earlier Math Characters set: arrows, number sets, ordinary digits, superscripts, and subscripts. It now also carries the confirmed long, mapsto/from-bar, hook, two-headed, and repeat arrows.
 
-The other eight pages are the current hardware-keyboard groups:
+The other seven phone pages are:
 
 1. Math
-2. Programming
-3. Regular Expressions
-4. Concept Separation
-5. Movement
+2. Punctuation
+3. Programming
+4. Regular Expressions
+5. Concept Separation
 6. Incantation Assistance
 7. Several Pastebins
-8. Signals
 
-The layouts were transcribed from `isomorphisms/programmers-keyboard` at commit `43f900c61a3f03d612e19d5cbacbab820b5c0dc3`. That includes the paired `⟦ ⟧` evaluation key, Unicode minus `−`, quad space, all four regex rows, `7×` through `29×`, and the three pastebin slots. The separately confirmed thin-space key is carried forward beside quad space.
+The layouts were transcribed from `isomorphisms/programmers-keyboard` at commit `43f900c61a3f03d612e19d5cbacbab820b5c0dc3`, plus the punctuation note at `410d2a2`. Punctuation keeps mathematical minus `−`, en dash `–`, and em dash `—` distinct; ASCII hyphen-minus is deliberately not given a key. Quad and thin spaces remain separate. Lambda and useful arrows intentionally appear on more than one page.
 
-Paired delimiters insert both characters and leave the cursor between them. Pastebin slots last for the current app process. Signal keys insert explicit names such as `SIGTERM`; a standalone Android character pad does not pretend it can signal another process.
+Movement and Signals remain hardware-keyboard concerns and are omitted from the phone pad. Incantation Assistance keeps Tab/Complete and Finish Incantation, but not chant history.
+
+Paired delimiters and quote marks insert both characters and leave the cursor between them. Pastebin slots last for the current app process.
 
 ## Why this is a pad, not an IME
 
@@ -48,7 +49,7 @@ It compiles with strict warnings plus address and undefined-behavior sanitizers.
 - every page, row, label, output, and UTF-8 string
 - Unicode-aware insertion, cursor movement, and backspace
 - paired insertion and exact quad/thin/ordinary spaces
-- repeat counts, line movement, undo, history, and pastebin slots
+- punctuation distinctions, duplicated λ/arrows, undo, completion keys, and pastebin slots
 - buffer-capacity failure without partial writes
 - touch hit-testing for every key in portrait and landscape
 
@@ -62,4 +63,4 @@ The build directly composes NDK Clang, `aapt2`, `zip`, `zipalign`, and `apksigne
 ./build-apk.sh
 ```
 
-The debug APK is `math-characters/app/build/outputs/apk/debug/app-debug.apk`. Pull-request runs upload it as `programmers-unicode-pad-debug-apk`.
+The debug APK is `math-characters/app/build/outputs/apk/debug/app-debug.apk`. Pull-request runs upload it as `programmers-unicode-pad-debug-apk`. Set `ANDROID_KEYSTORE` when rebuilding an installed copy so Android recognizes the new APK as an update.
