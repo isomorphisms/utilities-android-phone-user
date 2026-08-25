@@ -33,7 +33,7 @@ printf '%s\n' "$badging" | grep -F "launchable-activity: name='android.app.Nativ
 
 permissions=$($build_tools/aapt2 dump permissions "$apk")
 if printf '%s\n' "$permissions" | grep -F 'uses-permission:' >/dev/null; then
-    echo "standalone pad unexpectedly requests an Android permission" >&2
+    echo "standalone picker unexpectedly requests an Android permission" >&2
     printf '%s\n' "$permissions" >&2
     exit 1
 fi

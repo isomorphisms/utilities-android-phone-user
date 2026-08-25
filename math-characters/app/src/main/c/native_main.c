@@ -473,7 +473,7 @@ static bool copy_to_clipboard(AppContext *context) {
     const jmethodID new_plain_text = (*environment)->GetStaticMethodID(
         environment, clip_data_class, "newPlainText",
         "(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Landroid/content/ClipData;");
-    label = (*environment)->NewStringUTF(environment, "Programmer's Unicode Pad");
+    label = (*environment)->NewStringUTF(environment, "Programmer's Unicode Picker");
     value = (*environment)->NewStringUTF(environment, context->state.text);
     clip = (*environment)->CallStaticObjectMethod(environment, clip_data_class,
                                                    new_plain_text, label, value);

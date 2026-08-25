@@ -1,0 +1,229 @@
+module UnicodePicker
+
+%default total
+
+||| Actions which a standalone Unicode picker key may perform.
+||| Hardware movement, signals, and IME actions cannot be represented here.
+public export
+choice picker_action one_of
+  insert_text String
+  insert_pair String
+  view_slot Nat
+  remember_slot Nat
+  write_slot Nat
+
+public export
+data PickerKey = Key String picker_action
+
+public export
+data PickerRow = Row (List PickerKey)
+
+public export
+data PickerPage = Page String (List PickerRow)
+
+text_key : String → String → PickerKey
+text_key label text = Key label (insert_text text)
+
+pair_key : String → String → PickerKey
+pair_key label text = Key label (insert_pair text)
+
+public export
+pages : List PickerPage
+pages =
+  [ Page "Unicode"
+      [ Row
+          [ text_key "←" "←", text_key "↑" "↑", text_key "↓" "↓"
+          , text_key "→" "→", text_key "↔" "↔", text_key "↦" "↦"
+          , text_key "⇒" "⇒"
+          ]
+      , Row
+          [ text_key "⟵" "⟵", text_key "⟶" "⟶", text_key "⟻" "⟻"
+          , text_key "⟼" "⟼", text_key "↩" "↩", text_key "↪" "↪"
+          , text_key "↞" "↞", text_key "↠" "↠", text_key "⟳" "⟳"
+          , text_key "⟲" "⟲"
+          ]
+      , Row
+          [ text_key "ℂ" "ℂ", text_key "ℝ" "ℝ", text_key "ℚ" "ℚ"
+          , text_key "ℤ" "ℤ", text_key "ℕ" "ℕ", text_key "∞" "∞"
+          , text_key "i" "i", text_key "j" "j", text_key "k" "k"
+          ]
+      , Row
+          [ text_key "0" "0", text_key "1" "1", text_key "2" "2"
+          , text_key "3" "3", text_key "4" "4", text_key "5" "5"
+          , text_key "6" "6", text_key "7" "7", text_key "8" "8"
+          , text_key "9" "9"
+          ]
+      , Row
+          [ text_key "⁰" "⁰", text_key "¹" "¹", text_key "²" "²"
+          , text_key "³" "³", text_key "⁴" "⁴", text_key "⁵" "⁵"
+          , text_key "⁶" "⁶", text_key "⁷" "⁷", text_key "⁸" "⁸"
+          , text_key "⁹" "⁹"
+          ]
+      , Row
+          [ text_key "⁺" "⁺", text_key "⁻" "⁻", text_key "⁼" "⁼"
+          , text_key "⁽" "⁽", text_key "⁾" "⁾", text_key "ⁱ" "ⁱ"
+          , text_key "ʲ" "ʲ", text_key "ᵏ" "ᵏ", text_key "ˡ" "ˡ"
+          , text_key "ⁿ" "ⁿ"
+          ]
+      , Row
+          [ text_key "₀" "₀", text_key "₁" "₁", text_key "₂" "₂"
+          , text_key "₃" "₃", text_key "₄" "₄", text_key "₅" "₅"
+          , text_key "₆" "₆", text_key "₇" "₇", text_key "₈" "₈"
+          , text_key "₉" "₉"
+          ]
+      , Row
+          [ text_key "₊" "₊", text_key "₋" "₋", text_key "₌" "₌"
+          , text_key "₍" "₍", text_key "₎" "₎", text_key "ᵢ" "ᵢ"
+          , text_key "ⱼ" "ⱼ", text_key "ₖ" "ₖ", text_key "ₗ" "ₗ"
+          ]
+      ]
+  , Page "Math"
+      [ Row
+          [ text_key "+\nADD" "+", text_key "−\nSUBTRACT" "−"
+          , text_key "×\nMULTIPLY" "×", text_key "÷\nDIVIDE" "÷"
+          ]
+      , Row
+          [ text_key "=\nEQUAL" "=", text_key "≠\nNOT EQUAL" "≠"
+          , text_key "<" "<", text_key "≤" "≤", text_key ">" ">"
+          , text_key "≥" "≥"
+          ]
+      , Row
+          [ text_key "λ" "λ", text_key "χ" "χ", text_key "←" "←"
+          , text_key "→" "→", text_key "↦" "↦", text_key "⇒" "⇒"
+          ]
+      ]
+  , Page "Punctuation"
+      [ Row
+          [ text_key "−\nMINUS" "−", text_key "–\nEN DASH" "–"
+          , text_key "—\nEM DASH" "—", text_key "…\nELLIPSIS" "…"
+          ]
+      , Row
+          [ text_key "." ".", text_key "," ",", text_key ":" ":"
+          , text_key ";" ";", text_key "?" "?", text_key "!" "!"
+          ]
+      , Row
+          [ text_key "\"\nQUOTE" "\"", text_key "'\nAPOSTROPHE" "'"
+          , text_key "`\nBACKTICK" "`", pair_key "“ ”\nPAIR" "“”"
+          , pair_key "‘ ’\nPAIR" "‘’", pair_key "« »\nPAIR" "«»"
+          ]
+      , Row
+          [ pair_key "( )\nPAIR" "()", pair_key "[ ]\nPAIR" "[]"
+          , pair_key "{ }\nPAIR" "{}", pair_key "⟨ ⟩\nPAIR" "⟨⟩"
+          , pair_key "⟦ ⟧\nPAIR" "⟦⟧"
+          ]
+      , Row
+          [ text_key "/" "/", text_key "\\" "\\", text_key "|" "|"
+          , text_key "_" "_", text_key "@" "@", text_key "#" "#"
+          ]
+      ]
+  , Page "Programming"
+      [ Row
+          [ text_key "{" "{", text_key "(" "(", text_key "[" "["
+          , pair_key "⟨ ⟩\nPAIR" "⟨⟩", text_key "λ" "λ"
+          , text_key "ƒ" "ƒ", text_key "≝\nDEFINE" "≝"
+          , pair_key "⟦ ⟧\nEVALUATE" "⟦⟧", text_key "}" "}"
+          , text_key ")" ")", text_key "]" "]"
+          ]
+      , Row
+          [ text_key "←\nASSIGN" "←", text_key "→\nASSIGN" "→"
+          , text_key "∘\nCOMPOSE" "∘", text_key "&\nADDRESS" "&"
+          , text_key "*\nDEREFERENCE" "*", text_key "*\nPOINTER TYPE" "*"
+          , text_key "*\nSPLAT" "*"
+          ]
+      , Row
+          [ text_key "$\nSCALAR" "$", text_key "@\nARRAY" "@"
+          , text_key "%\nHASH" "%", text_key "." ".", text_key ":" ":"
+          , text_key ";" ";", text_key "'" "'", text_key "`" "`"
+          , text_key "\"" "\""
+          ]
+      , Row
+          [ text_key "/" "/", text_key "\\" "\\", text_key "|" "|"
+          , text_key "#\nCOMMENT" "#", pair_key "“ ”\nPAIR" "“”"
+          , pair_key "« »\nPAIR" "«»"
+          ]
+      , Row
+          [ text_key "𝔽\nFLOAT" "𝔽", text_key "DD\nDOUBLE" "DD"
+          , text_key "CC\nCHAR" "CC", text_key "SS\nSTRING" "SS"
+          , text_key "DO" "DO", text_key "LOOP" "LOOP"
+          , text_key "f\"\"\"\nSTART TEXT" "f\"\"\""
+          ]
+      ]
+  , Page "Regular Expressions"
+      [ Row
+          [ text_key "START\nOF LINE" "^", text_key "END\nOF LINE" "$"
+          , text_key "END\nOF SLURP" "\\z", text_key "MAYBE\nOK IF NOT?" "?"
+          ]
+      , Row
+          [ pair_key "BIG CAPTURE\nGREEDY" "(.*)"
+          , pair_key "SMALL CAPTURE\nNON GREEDY" "(.*?)"
+          , pair_key "EXACT ORDER\nGROUP" "()", pair_key "ANY FROM\nLIST" "[]"
+          ]
+      , Row
+          [ text_key "LETTER" "\\p{L}", text_key "NUMBER" "\\d"
+          , text_key "NON WEIRD\nCHARACTER" "\\w"
+          , text_key "WEIRD\nCHARACTER" "\\W"
+          ]
+      , Row
+          [ text_key "INCANTATION RUNES\nCONTROL CHARACTERS" "\\p{Cc}" ]
+      ]
+  , Page "Concept Separation"
+      [ Row
+          [ text_key "QUAD\nSPACE" " ", text_key "THIN\nSPACE" " "
+          , text_key "FOUR\nSPACES" "    ", text_key "DOUBLE\nSPACE" "  "
+          , text_key "SINGLE\nSPACE" " "
+          ]
+      , Row [ text_key "↹\nINDENT" "\t", text_key "_\nUNDERSCORE" "_" ]
+      ]
+  , Page "Incantation Assistance"
+      [ Row
+          [ text_key "TAB /\nCOMPLETE" "\t"
+          , text_key "FINISH\nINCANTATION" "\n"
+          ]
+      ]
+  , Page "Several Pastebins"
+      [ Row
+          [ Key "VIEW₁" (view_slot 0), Key "VIEW₂" (view_slot 1)
+          , Key "VIEW₃" (view_slot 2)
+          ]
+      , Row
+          [ Key "REMEMBER₁" (remember_slot 0), Key "REMEMBER₂" (remember_slot 1)
+          , Key "REMEMBER₃" (remember_slot 2)
+          ]
+      , Row
+          [ Key "WRITE₁" (write_slot 0), Key "WRITE₂" (write_slot 1)
+          , Key "WRITE₃" (write_slot 2)
+          ]
+      ]
+  ]
+
+public export
+page_name : PickerPage → String
+page_name (Page name _) = name
+
+public export
+page_rows : PickerPage → List PickerRow
+page_rows (Page _ rows) = rows
+
+public export
+row_keys : PickerRow → List PickerKey
+row_keys (Row keys) = keys
+
+public export
+key_label : PickerKey → String
+key_label (Key label _) = label
+
+public export
+key_action : PickerKey → picker_action
+key_action (Key _ action) = action
+
+public export
+all_keys : List PickerPage → List PickerKey
+all_keys input = concatMap (concatMap row_keys . page_rows) input
+
+public export
+inserted_text : picker_action → Maybe String
+inserted_text (insert_text text) = Just text
+inserted_text (insert_pair text) = Just text
+inserted_text (view_slot _) = Nothing
+inserted_text (remember_slot _) = Nothing
+inserted_text (write_slot _) = Nothing
