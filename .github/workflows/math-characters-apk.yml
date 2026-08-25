@@ -1,4 +1,4 @@
-name: Programmer's Unicode Pad Android
+name: Programmer's Unicode Picker Android
 
 on:
   pull_request:
@@ -15,6 +15,27 @@ permissions:
   contents: read
 
 jobs:
+  idric-layout-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: isomorphisms/Idric
+          ref: d93b5cf538836325812813e81c2dfdac159397b0
+          path: idric-compiler
+
+      - name: Build pinned Idriç compiler
+        run: idric-compiler/edric bootstrap
+
+      - name: Check Idriç picker model and generated layouts
+        run: |
+          PATH="$PWD/idric-compiler/.tools/bin:$PATH" \
+          IDRIC_COMPILER="$PWD/idric-compiler/build/exec/idris2" \
+          math-characters/check-idric-layouts.sh
+
   test-build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -59,7 +80,7 @@ jobs:
           name: programmers-unicode-pad-debug-apk
           path: downloaded-apk
 
-      - name: Launch and exercise native pad
+      - name: Launch and exercise native picker
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29

@@ -1,0 +1,47 @@
+module PickerContract
+
+import UnicodePicker
+
+%default total
+
+count_text : String → List String → Nat
+count_text _ [] = 0
+count_text wanted (actual :: rest) =
+  (if wanted == actual then 1 else 0) + count_text wanted rest
+
+outputs : List PickerKey → List String
+outputs [] = []
+outputs (key :: rest) =
+  case inserted_text (key_action key) of
+    Nothing ⇒ outputs rest
+    Just text ⇒ text :: outputs rest
+
+page_names : List String
+page_names = map page_name pages
+
+key_labels : List String
+key_labels = map key_label (all_keys pages)
+
+inserted_outputs : List String
+inserted_outputs = outputs (all_keys pages)
+
+contract_holds : Bool
+contract_holds =
+  page_names ==
+    [ "Unicode", "Math", "Punctuation", "Programming"
+    , "Regular Expressions", "Concept Separation"
+    , "Incantation Assistance", "Several Pastebins"
+    ] &&
+  not (elem "Movement" page_names) &&
+  not (elem "Signals" page_names) &&
+  not (elem "CHANT\nHISTORY" key_labels) &&
+  not (elem "-" inserted_outputs) &&
+  count_text "λ" inserted_outputs >= 2 &&
+  count_text "←" inserted_outputs >= 3 &&
+  count_text "→" inserted_outputs >= 3
+
+main : IO ()
+main =
+  if contract_holds
+    then putStrLn "picker_contract: all checks passed"
+    else putStrLn "picker_contract: FAILED"

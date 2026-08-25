@@ -1,6 +1,12 @@
-# Programmer's Unicode Pad
+# Programmer's Unicode Picker
 
-A small standalone Android pad for entering the symbols and text macros from the Programmer's Keyboard layouts. Tap keys into the buffer, tap **COPY**, switch to the target app, and paste.
+A small standalone Android picker for entering symbols and text macros from the Programmer's Keyboard layouts. Tap keys into the buffer, tap **COPY**, switch to the target app, and paste. It is an ordinary app, not an Android input method or system keyboard.
+
+## Idriç refactor boundary
+
+The first refactor slice moves all eight page definitions and their allowed key actions into `idric/UnicodePicker.idric`. The Idriç type only permits text insertion, paired insertion, and the three pastebin operations; movement keys, signals, and IME actions cannot be placed on a picker page.
+
+`idric/GenerateLayouts.idric` emits the deterministic C layout snapshot compiled into the APK. `check-idric-layouts.sh` compiles the Idriç model, runs its picker-specific contract, and rejects a stale generated snapshot. The mutable editing state and Android boundary remain C for now; this slice does not disguise handwritten C as Idriç or ship a Scheme runtime on the phone.
 
 The APK contains native C machine code only:
 
@@ -10,7 +16,7 @@ The APK contains native C machine code only:
 - no network or Android permissions
 - `arm64-v8a`, `armeabi-v7a`, and `x86_64` native libraries
 
-Android's platform-provided `NativeActivity`, `Canvas`, and clipboard service supply the OS boundary. The application state, layouts, editing, touch handling, rendering orchestration, and clipboard call site are C.
+Android's platform-provided `NativeActivity`, `Canvas`, and clipboard service supply the OS boundary. The checked-in generated layouts, mutable editing state, touch handling, rendering orchestration, and clipboard call site compile as C.
 
 ## Pages
 
@@ -28,13 +34,13 @@ The other seven phone pages are:
 
 The layouts were transcribed from `isomorphisms/programmers-keyboard` at commit `43f900c61a3f03d612e19d5cbacbab820b5c0dc3`, plus the punctuation note at `410d2a2`. Punctuation keeps mathematical minus `−`, en dash `–`, and em dash `—` distinct; ASCII hyphen-minus is deliberately not given a key. Quad and thin spaces remain separate. Lambda and useful arrows intentionally appear on more than one page.
 
-Movement and Signals remain hardware-keyboard concerns and are omitted from the phone pad. Incantation Assistance keeps Tab/Complete and Finish Incantation, but not chant history.
+Movement and Signals remain hardware-keyboard concerns and are omitted from the phone picker. Incantation Assistance keeps Tab/Complete and Finish Incantation, but not chant history.
 
 Paired delimiters and quote marks insert both characters and leave the cursor between them. Pastebin slots last for the current app process.
 
-## Why this is a pad, not an IME
+## Why this is a picker, not an IME
 
-Android requires a software keyboard service to inherit from `InputMethodService`, which is a Java framework class loaded from DEX bytecode. A true IME therefore cannot also satisfy “no Java/Kotlin, no classes, no virtual-machine bytecode.” This build takes the native-compatible side of that boundary: a UnicodePad-style standalone buffer and clipboard.
+Android requires a software keyboard service to inherit from `InputMethodService`, which is a Java framework class loaded from DEX bytecode. A true IME therefore cannot also satisfy “no Java/Kotlin, no classes, no virtual-machine bytecode.” This build is deliberately a standalone Unicode picker with a buffer and clipboard operation.
 
 ## Tests
 
@@ -42,6 +48,14 @@ Run the platform-independent behavior suite on Linux:
 
 ```sh
 ./run-host-tests.sh
+```
+
+With the pinned Idriç compiler available, verify the typed source and generated boundary:
+
+```sh
+PATH=/path/to/Idric/.tools/bin:$PATH \
+IDRIC_COMPILER=/path/to/Idric/build/exec/idris2 \
+./check-idric-layouts.sh
 ```
 
 It compiles with strict warnings plus address and undefined-behavior sanitizers. The tests cover:
