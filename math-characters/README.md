@@ -1,35 +1,66 @@
-# Math Characters IME
+# Programmer's Unicode Pad
 
-A deliberately restricted Android software keyboard for the small set of mathematical and programming characters that are awkward to reach from a normal phone keyboard.
+A small standalone Android pad for entering the symbols and text macros from the Programmer's Keyboard layouts. Tap keys into the buffer, tap **COPY**, switch to the target app, and paste.
 
-## First key set
+The APK contains native C machine code only:
 
-- arrows: `← ↑ ↓ → ↔ ↦ ⇒`
-- number sets and infinity: `ℂ ℝ ℚ ℤ ℕ ∞`
-- basis / imaginary letters: `i j k`
-- ordinary digits: `0 1 2 3 4 5 6 7 8 9`
-- superscripts: `⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁽ ⁾ ⁱ ʲ ᵏ ˡ ⁿ`
-- subscripts: `₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₊ ₋ ₌ ₍ ₎ ᵢ ⱼ ₖ ₗ`
-- editing: space, backspace, enter, and an IME picker button
+- no Java or Kotlin source
+- no generated `classes.dex`
+- no app classes or inheritance
+- no network or Android permissions
+- `arm64-v8a`, `armeabi-v7a`, and `x86_64` native libraries
 
-There is no Unicode database, search UI, network access, account, clipboard history, or predictive text.
+Android's platform-provided `NativeActivity`, `Canvas`, and clipboard service supply the OS boundary. The application state, layouts, editing, touch handling, rendering orchestration, and clipboard call site are C.
 
-## Use
+## Pages
 
-1. Install the APK.
-2. Open **Math Characters** and tap **Enable keyboard**.
-3. Enable Math Characters in Android's input-method settings.
-4. Tap **Choose keyboard** or use Android's keyboard switcher.
-5. The `IME` button on the symbol pad opens Android's input-method picker so you can switch back quickly.
+The first page keeps the earlier Math Characters set: arrows, number sets, ordinary digits, superscripts, and subscripts. It now also carries the confirmed long, mapsto/from-bar, hook, two-headed, and repeat arrows.
+
+The other seven phone pages are:
+
+1. Math
+2. Punctuation
+3. Programming
+4. Regular Expressions
+5. Concept Separation
+6. Incantation Assistance
+7. Several Pastebins
+
+The layouts were transcribed from `isomorphisms/programmers-keyboard` at commit `43f900c61a3f03d612e19d5cbacbab820b5c0dc3`, plus the punctuation note at `410d2a2`. Punctuation keeps mathematical minus `−`, en dash `–`, and em dash `—` distinct; ASCII hyphen-minus is deliberately not given a key. Quad and thin spaces remain separate. Lambda and useful arrows intentionally appear on more than one page.
+
+Movement and Signals remain hardware-keyboard concerns and are omitted from the phone pad. Incantation Assistance keeps Tab/Complete and Finish Incantation, but not chant history.
+
+Paired delimiters and quote marks insert both characters and leave the cursor between them. Pastebin slots last for the current app process.
+
+## Why this is a pad, not an IME
+
+Android requires a software keyboard service to inherit from `InputMethodService`, which is a Java framework class loaded from DEX bytecode. A true IME therefore cannot also satisfy “no Java/Kotlin, no classes, no virtual-machine bytecode.” This build takes the native-compatible side of that boundary: a UnicodePad-style standalone buffer and clipboard.
+
+## Tests
+
+Run the platform-independent behavior suite on Linux:
+
+```sh
+./run-host-tests.sh
+```
+
+It compiles with strict warnings plus address and undefined-behavior sanitizers. The tests cover:
+
+- every page, row, label, output, and UTF-8 string
+- Unicode-aware insertion, cursor movement, and backspace
+- paired insertion and exact quad/thin/ordinary spaces
+- punctuation distinctions, duplicated λ/arrows, undo, completion keys, and pastebin slots
+- buffer-capacity failure without partial writes
+- touch hit-testing for every key in portrait and landscape
+
+The Android workflow then builds the APK, verifies that it is signed, aligned, permission-free, DEX-free, and contains every target ABI, and launches it in an API 29 emulator. The emulator taps a symbol, copies it, changes pages, taps a second key, captures the screen, and checks that the native process remains alive without a fatal log entry.
 
 ## Build
 
-Requires JDK 17, Android SDK 36, and Gradle 9.5.0.
+The build directly composes NDK Clang, `aapt2`, `zip`, `zipalign`, and `apksigner`. It needs JDK 17 for the Android signing program, Android SDK/build-tools 36, and NDK 27.2.12479018:
 
 ```sh
-gradle -p math-characters testDebugUnitTest assembleDebug
+./build-apk.sh
 ```
 
-Pull-request CI runs the unit test, builds the debug APK, and uploads it as `math-characters-debug-apk`.
-
-The separate `math-characters-picker` branch explores the UnicodePad-style standalone picker. This project stays focused on the IME.
+The debug APK is `math-characters/app/build/outputs/apk/debug/app-debug.apk`. Pull-request runs upload it as `programmers-unicode-pad-debug-apk`. Set `ANDROID_KEYSTORE` when rebuilding an installed copy so Android recognizes the new APK as an update.
