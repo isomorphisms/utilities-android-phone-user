@@ -189,7 +189,7 @@ static const PadKey idric_page_3_row_0_keys[] = {
     KEY("]", PAD_INSERT, "]", 0u),
 };
 static const PadKey idric_page_3_row_1_keys[] = {
-    KEY("←\nASSIGN", PAD_INSERT, "←", 0u),
+    KEY("⟵\nASSIGN", PAD_INSERT, "⟵", 0u),
     KEY("→\nASSIGN", PAD_INSERT, "→", 0u),
     KEY("∘\nCOMPOSE", PAD_INSERT, "∘", 0u),
     KEY("&\nADDRESS", PAD_INSERT, "&", 0u),
