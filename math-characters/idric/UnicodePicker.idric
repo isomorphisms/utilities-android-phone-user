@@ -125,7 +125,7 @@ pages =
           , text_key ")" ")", text_key "]" "]"
           ]
       , Row
-          [ text_key "←\nASSIGN" "←", text_key "→\nASSIGN" "→"
+          [ text_key "⟵\nASSIGN" "⟵", text_key "→\nASSIGN" "→"
           , text_key "∘\nCOMPOSE" "∘", text_key "&\nADDRESS" "&"
           , text_key "*\nDEREFERENCE" "*", text_key "*\nPOINTER TYPE" "*"
           , text_key "*\nSPLAT" "*"
