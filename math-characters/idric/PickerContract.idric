@@ -36,8 +36,10 @@ contract_holds =
   not (elem "Signals" page_names) &&
   not (elem "CHANT\nHISTORY" key_labels) &&
   not (elem "-" inserted_outputs) &&
+  elem "⟵\nASSIGN" key_labels &&
   count_text "λ" inserted_outputs >= 2 &&
-  count_text "←" inserted_outputs >= 3 &&
+  count_text "←" inserted_outputs >= 2 &&
+  count_text "⟵" inserted_outputs >= 2 &&
   count_text "→" inserted_outputs >= 3
 
 main : IO ()
