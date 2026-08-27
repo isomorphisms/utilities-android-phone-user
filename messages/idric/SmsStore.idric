@@ -1,0 +1,65 @@
+module SmsStore
+
+%default total
+
+-- Android Telephony.Sms type values.  Keep the provider distinction here,
+-- without turning it into a thread/contact/participant model.
+public export
+choice sms_box one_of
+  inbox
+  sent
+  draft
+  outbox
+  failed
+  queued
+  unknown Integer
+
+public export
+record SmsRow where
+  constructor MkSmsRow
+  rowId   : Integer
+  address : String
+  body    : String
+  dateMs  : Integer
+  box     : sms_box
+  read    : Bool
+  status  : Integer
+
+-- The Android-specific implementation is deliberately injected at this
+-- boundary.  On Android it is backed by JNI -> ContentResolver.query().
+-- Nothing above this record needs to know about Cursor, Uri, JNI, contacts,
+-- MMS, RCS, or Android thread/participant machinery.
+public export
+record SmsStoreDriver where
+  constructor MkSmsStoreDriver
+  readRecent : Nat -> IO (List SmsRow)
+
+public export
+smsContentUri : String
+smsContentUri = "content://sms"
+
+public export
+smsProjection : List String
+smsProjection =
+  [ "_id"
+  , "address"
+  , "body"
+  , "date"
+  , "type"
+  , "read"
+  , "status"
+  ]
+
+public export
+smsSortOrder : String
+smsSortOrder = "date DESC"
+
+public export
+boxFromProviderType : Integer -> sms_box
+boxFromProviderType 1 = inbox
+boxFromProviderType 2 = sent
+boxFromProviderType 3 = draft
+boxFromProviderType 4 = outbox
+boxFromProviderType 5 = failed
+boxFromProviderType 6 = queued
+boxFromProviderType code = unknown code
