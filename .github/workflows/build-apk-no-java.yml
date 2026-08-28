@@ -1,0 +1,53 @@
+name: Gradle-free native APK
+
+on:
+  pull_request:
+    paths:
+      - 'build-apk-no-java/**'
+      - '.github/workflows/build-apk-no-java.yml'
+  push:
+    branches: [main, build-apk-no-java]
+    paths:
+      - 'build-apk-no-java/**'
+      - '.github/workflows/build-apk-no-java.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Find preinstalled Android SDK and NDK
+        shell: bash
+        run: |
+          sdk_root=${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}
+          test -n "$sdk_root"
+          ndk_root=$(find "$sdk_root/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          test -n "$ndk_root"
+          test -f "$sdk_root/platforms/android-35/android.jar"
+          echo "ANDROID_SDK_ROOT=$sdk_root" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=$ndk_root" >> "$GITHUB_ENV"
+
+      - name: Reject Java, Kotlin, DEX, and Gradle inputs
+        run: build-apk-no-java/check.sh
+
+      - name: Build aligned unsigned ARMv7 APK
+        run: build-apk-no-java/build-apk.sh
+
+      - name: Inspect the APK contract
+        shell: bash
+        run: |
+          apk=build-apk-no-java/example/build/native-example-0.1.0-unsigned.apk
+          unzip -Z1 "$apk" | tee /tmp/apk-entries.txt
+          grep -Fx 'lib/armeabi-v7a/libnative_example.so' /tmp/apk-entries.txt
+          ! grep -Fx 'classes.dex' /tmp/apk-entries.txt
+          file build-apk-no-java/example/build/stage/lib/armeabi-v7a/libnative_example.so | grep 'ELF 32-bit.*ARM'
+          build_tools=
+          for candidate in "$ANDROID_SDK_ROOT"/build-tools/*; do
+            test -d "$candidate" && build_tools=$candidate
+          done
+          "$build_tools/zipalign" -c -P 16 4 "$apk"
