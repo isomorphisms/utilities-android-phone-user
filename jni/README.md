@@ -21,8 +21,8 @@ The source of truth for the inventory is AOSP's [`include_jni/jni.h`](https://an
 - [`registration-vm-threads.md`](registration-vm-threads.md) — native registration, `JavaVM`, thread attachment, library loading, and the Invocation API.
 - [`android-art.md`](android-art.md) — class-loader traps, `NativeActivity`, CheckJNI, permissions, and what JNI does not bypass.
 - [`ib-file-picker-route.md`](ib-file-picker-route.md) — the concrete JNI route for IB's document picker, shared URL, and pre-paint acceptance path.
+- [`clipboard-native-view-route.md`](clipboard-native-view-route.md) — the concrete clipboard call chain and the `ANativeWindow` → `Surface` → `Canvas` display boundary already exercised by the native picker.
 
 ## Binding stance
 
 A D binding should reproduce the AOSP table exactly and then place small typed wrappers above it. The raw table is inherently unsafe: most misuse is not checked, almost every object-returning call can leave an exception pending, references have lifetimes not expressed by the C types, and `JNIEnv*` belongs to one thread. The higher layer should make those facts visible rather than pretending a raw `jobject` is an ordinary durable pointer.
-
