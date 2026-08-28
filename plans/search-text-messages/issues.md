@@ -10,5 +10,15 @@ Issues are repository-wide; the files in this folder preserve the branch-specifi
 | G4 | Browse photos exchanged with one person | [#14](https://github.com/isomorphisms/utilities-android-phone-user/issues/14) |
 | G5 | Browse photos across all conversations | [#15](https://github.com/isomorphisms/utilities-android-phone-user/issues/15) |
 | G6 | Recover the context of a found photo | [#16](https://github.com/isomorphisms/utilities-android-phone-user/issues/16) |
+| G7 | Preserve useful message photos outside the messaging app | [#17](https://github.com/isomorphisms/utilities-android-phone-user/issues/17) |
+| G8 | Remove disposable message photos in bulk | [#18](https://github.com/isomorphisms/utilities-android-phone-user/issues/18) |
+| G9 | Keep work and family photos separate | [#19](https://github.com/isomorphisms/utilities-android-phone-user/issues/19) |
+| G10 | Back up family photos without provider-side AI access | [#20](https://github.com/isomorphisms/utilities-android-phone-user/issues/20) |
+
+## Research issues
+
+| Question | Tracking issue |
+| --- | --- |
+| Compare privacy-oriented, end-to-end-encrypted, and self-hosted family-photo destinations | [#21](https://github.com/isomorphisms/utilities-android-phone-user/issues/21) |
 
 The issues track outcomes. Proposed search algorithms, indexes, filters, gallery implementations, and Android data-source work should be linked to the stories they serve rather than rewritten as additional “user stories.”
