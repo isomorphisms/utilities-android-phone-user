@@ -42,4 +42,3 @@ The current executable data boundary is narrower than the human stories: [`../..
 - [roadmap-and-tests.md](roadmap-and-tests.md) gives implementation gates, measurements, and the correctness corpus.
 
 The user stories should grow when a new human situation appears, not merely whenever another algorithm, filter, or screen is proposed. The technical files may evolve as implementations are measured, but they must continue to point back to the human goals and explicit source coverage.
-
