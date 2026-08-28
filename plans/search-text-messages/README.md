@@ -14,12 +14,15 @@ A capability is not automatically a user story. “Give me a gallery,” “filt
 
 ## Working boundaries
 
-- This branch is about read-only retrieval and presentation. It does not need to send, edit, delete, mark, or otherwise write messages.
+- The first useful slice remains read-only retrieval and presentation.
+- Later stories include deliberate export and possible bulk cleanup. Hiding an item, excluding it from backup, deleting an exported copy, and deleting source message data are different actions.
+- Any source deletion requires its own reviewed design, an exact preview, and a clear account of what Android permits; recording the story does not silently expand the first slice into a message writer.
 - It is separate from [issue #9](https://github.com/isomorphisms/utilities-android-phone-user/issues/9), which asks whether this repository should eventually contain a default SMS application.
 - “Text messages” is the ordinary human name for the history visible in a messaging app. The underlying records may be SMS, MMS, or RCS. Every implementation must state which sources it can actually read.
 - Photo stories cannot be satisfied by SMS-body access alone. Missing MMS or RCS coverage must be visible rather than silently presented as a complete gallery.
 - A result must retain provenance: conversation or participants, sender/direction, date and time when available, and a route back to surrounding context.
-- Nothing is shared outside the phone merely because it was found. Sharing is a separate, deliberate action.
+- Nothing is shared outside the phone merely because it was found. Sharing, export, and backup are separate, deliberate actions.
+- Export destinations must remain selectable. The plan must not assume Google Photos, Google Drive, Instagram, Facebook, or any other single provider.
 
 The current executable data boundary is narrower than the human stories: [`../../messages/README.md`](../../messages/README.md) covers read-only SMS rows only. The technical plan begins there and treats broader MMS/RCS/media coverage as separate, explicit later work.
 
