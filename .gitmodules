@@ -1,0 +1,18 @@
+[submodule "messages/backup/upstream/sms-ie"]
+	path = messages/backup/upstream/sms-ie
+	url = https://github.com/tmo1/sms-ie.git
+[submodule "messages/backup/upstream/sms-backup-plus"]
+	path = messages/backup/upstream/sms-backup-plus
+	url = https://github.com/jberkel/sms-backup-plus.git
+[submodule "messages/backup/upstream/fossify-messages"]
+	path = messages/backup/upstream/fossify-messages
+	url = https://github.com/FossifyOrg/Messages.git
+[submodule "messages/backup/upstream/quik"]
+	path = messages/backup/upstream/quik
+	url = https://github.com/quik-sms/quik.git
+[submodule "messages/backup/upstream/open-android-backup"]
+	path = messages/backup/upstream/open-android-backup
+	url = https://github.com/mrrfv/open-android-backup.git
+[submodule "messages/backup/upstream/phone-backup"]
+	path = messages/backup/upstream/phone-backup
+	url = https://github.com/borabuyukbas/PhoneBackup.git
