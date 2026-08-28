@@ -1,0 +1,43 @@
+name: Vendor MobileNet V3 Small
+
+on:
+  push:
+    branches:
+      - separate-home-photos-from-work-photos
+    paths:
+      - .github/workflows/vendor-mobilenet-v3-small.yml
+
+permissions:
+  contents: write
+
+jobs:
+  vendor-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: separate-home-photos-from-work-photos
+
+      - name: Download pinned Google MediaPipe model
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir='plans/separate-home-photos-from-work-photos/models'
+          file="$dir/mobilenet_v3_small.tflite"
+          mkdir -p "$dir"
+          curl --fail --location \
+            --output "$file" \
+            'https://storage.googleapis.com/mediapipe-models/image_embedder/mobilenet_v3_small/float32/1/mobilenet_v3_small.tflite'
+          test "$(wc -c < "$file")" -eq 4117670
+          echo 'bbbb4c51a55a53905af1daec995ca1aae355046f8839bb8c9f5ce9271394bc40  '"$file" | sha256sum --check --strict
+
+      - name: Commit model to branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add plans/separate-home-photos-from-work-photos/models/mobilenet_v3_small.tflite
+          git diff --cached --quiet && exit 0
+          git commit -m 'Vendor MobileNet V3 Small TFLite model'
+          git push origin HEAD:separate-home-photos-from-work-photos
