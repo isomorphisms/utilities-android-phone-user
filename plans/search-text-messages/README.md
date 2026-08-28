@@ -37,6 +37,7 @@ The current executable data boundary is narrower than the human stories: [`../..
 - [technical-plan.md](technical-plan.md) reconciles the SMS store, earlier ARM/Thumb and FPGA work, and the current decisions.
 - [operations.md](operations.md) separates literal, regex, token, fuzzy, ranked, semantic, and structured retrieval contracts.
 - [algorithms.md](algorithms.md) inventories scan, automaton, index, approximate, and semantic-search families.
+- [control-flow-and-fpga-notebook.md](control-flow-and-fpga-notebook.md) recovers the earlier FPGA grep notebook and the unusual control-flow ideas: jump tables, `TBB`/`TBH`, computed branches, threaded interpretation, predication, branchless masks, unrolling, register-bit state, SIMD, and FPGA state in gates.
 - [arm-thumb-and-fpga.md](arm-thumb-and-fpga.md) records what already exists and where target-specific lowering belongs.
 - [silver-searcher.md](silver-searcher.md) reviews The Silver Searcher (`ag`) and its find-like candidate-selection layer.
 - [roadmap-and-tests.md](roadmap-and-tests.md) gives implementation gates, measurements, and the correctness corpus.
