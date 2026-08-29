@@ -1,0 +1,150 @@
+name: Programmer's Unicode Picker 0.3.0 prerelease
+
+on:
+  push:
+    branches:
+      - programmers-unicode-picker-v0.3.0-prerelease
+    paths:
+      - '.github/workflows/programmers-unicode-picker-prerelease.yml'
+      - 'math-characters/**'
+
+permissions:
+  contents: write
+
+jobs:
+  idric-layout-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: isomorphisms/Idric
+          ref: d93b5cf538836325812813e81c2dfdac159397b0
+          path: idric-compiler
+
+      - name: Restore pinned Idriç compiler
+        id: idric-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            idric-compiler/.tools
+            idric-compiler/bootstrap-build
+            idric-compiler/build/exec
+          key: idric-${{ runner.os }}-${{ runner.arch }}-d93b5cf538836325812813e81c2dfdac159397b0
+
+      - name: Build pinned Idriç compiler
+        if: steps.idric-cache.outputs.cache-hit != 'true'
+        run: idric-compiler/edric bootstrap
+
+      - name: Check Idriç picker model and generated layouts
+        run: |
+          PATH="$PWD/idric-compiler/.tools/bin:$PATH" \
+          IDRIS2_PATH="$PWD/idric-compiler/bootstrap-build/idris2-0.8.0/prelude-0.8.0:$PWD/idric-compiler/bootstrap-build/idris2-0.8.0/base-0.8.0" \
+          IDRIS2_DATA="$PWD/idric-compiler/bootstrap-build/idris2-0.8.0/support" \
+          IDRIS2_LIBS="$PWD/idric-compiler/bootstrap-build/idris2-0.8.0/lib" \
+          IDRIC_COMPILER="$PWD/idric-compiler/build/exec/idris2" \
+          math-characters/check-idric-layouts.sh
+
+  test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018'
+
+      - name: Test C model and touch geometry
+        run: math-characters/run-host-tests.sh
+
+      - name: Build native picker APK
+        run: math-characters/build-apk.sh
+
+      - name: Verify native APK contract
+        run: math-characters/ci/check-apk.sh math-characters/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload picker APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: programmers-unicode-picker-0.3.0-pre.1-apk
+          path: math-characters/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+  emulator-smoke:
+    needs: test-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: programmers-unicode-picker-0.3.0-pre.1-apk
+          path: downloaded-apk
+
+      - name: Launch and exercise native picker
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: math-characters/ci/emulator-smoke.sh downloaded-apk/app-debug.apk /tmp/programmers-unicode-picker.png
+
+      - name: Upload smoke-test screen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: programmers-unicode-picker-0.3.0-pre.1-smoke-screen
+          path: /tmp/programmers-unicode-picker.png
+          if-no-files-found: warn
+
+  publish-prerelease:
+    needs:
+      - idric-layout-contract
+      - test-build
+      - emulator-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: programmers-unicode-picker-0.3.0-pre.1-apk
+          path: release-input
+
+      - name: Stage release files
+        run: |
+          set -eux
+          mkdir -p prerelease
+          cp release-input/app-debug.apk prerelease/programmers-unicode-picker-0.3.0-pre.1-debug.apk
+          (cd prerelease && sha256sum programmers-unicode-picker-0.3.0-pre.1-debug.apk > SHA256SUMS.txt)
+
+      - name: Create GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: programmers-unicode-picker-v0.3.0-pre.1
+        run: |
+          set -eux
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" prerelease/* --clobber
+            gh release edit "$TAG" \
+              --title "Programmer's Unicode Picker 0.3.0 prerelease" \
+              --notes-file math-characters/RELEASE_NOTES_0.3.0-pre.1.md \
+              --prerelease
+          else
+            gh release create "$TAG" prerelease/* \
+              --target "$GITHUB_SHA" \
+              --title "Programmer's Unicode Picker 0.3.0 prerelease" \
+              --notes-file math-characters/RELEASE_NOTES_0.3.0-pre.1.md \
+              --prerelease
+          fi
