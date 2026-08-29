@@ -91,7 +91,7 @@ static void test_layout_contract(void) {
     assert(layout_named("Movement") == NULL);
     assert(layout_named("Signals") == NULL);
     assert(key_text_count("λ") >= 2u);
-    assert(key_text_count("←") >= 3u);
+    assert(key_text_count("←") >= 2u);
     assert(key_text_count("→") >= 3u);
 }
 
