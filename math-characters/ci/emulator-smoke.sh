@@ -13,11 +13,20 @@ component=$package/android.app.NativeActivity
 
 adb install -r "$apk" >/dev/null
 adb logcat -c
+
+# Newer hosted Android images can finish boot with the keyguard still owning
+# touch input even though am start reports the activity as started. Wake and
+# dismiss it explicitly so the smoke-test taps reach the picker.
+adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
+adb shell input keyevent 82 >/dev/null 2>&1 || true
+
 adb shell am force-stop "$package"
 adb shell am start -W -n "$component" | tee /tmp/programmers-unicode-pad-start.txt
 grep -F 'Status: ok' /tmp/programmers-unicode-pad-start.txt >/dev/null
 
 sleep 2
+adb shell wm dismiss-keyguard >/dev/null 2>&1 || true
 test -n "$(adb shell pidof "$package" | tr -d '\r')"
 
 physical_size=$(adb shell wm size | tr -d '\r' | sed -n 's/.*: \([0-9][0-9]*\)x\([0-9][0-9]*\).*/\1 \2/p' | tail -n 1)
