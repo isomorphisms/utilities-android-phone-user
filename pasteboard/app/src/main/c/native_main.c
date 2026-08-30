@@ -150,7 +150,7 @@ static bool attach_environment(ANativeActivity *activity, JNIEnv **environment, 
         return true;
     }
     if (status != JNI_EDETACHED ||
-        (*activity->vm)->AttachCurrentThread(activity->vm, (void **)environment, NULL) != JNI_OK) {
+        (*activity->vm)->AttachCurrentThread(activity->vm, environment, NULL) != JNI_OK) {
         LOG_ERROR("could not attach native thread to Android runtime");
         return false;
     }
