@@ -1,0 +1,15 @@
+[submodule "archive-actblue-spam/models/political-debate-large"]
+	path = archive-actblue-spam/models/political-debate-large
+	url = https://huggingface.co/mlburnham/Political_DEBATE_large_v1.0
+[submodule "archive-actblue-spam/models/political-debate-base"]
+	path = archive-actblue-spam/models/political-debate-base
+	url = https://huggingface.co/mlburnham/Political_DEBATE_base_v1.0
+[submodule "archive-actblue-spam/models/deberta-v3-xsmall-zeroshot"]
+	path = archive-actblue-spam/models/deberta-v3-xsmall-zeroshot
+	url = https://huggingface.co/MoritzLaurer/deberta-v3-xsmall-zeroshot-v1.1-all-33
+[submodule "archive-actblue-spam/models/xtremedistil-zeroshot"]
+	path = archive-actblue-spam/models/xtremedistil-zeroshot
+	url = https://huggingface.co/MoritzLaurer/xtremedistil-l6-h256-zeroshot-v1.1-all-33
+[submodule "archive-actblue-spam/models/email-classifier"]
+	path = archive-actblue-spam/models/email-classifier
+	url = https://huggingface.co/jake-watkins/email-classifier
