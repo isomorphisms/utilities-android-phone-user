@@ -26,6 +26,7 @@ import androidx.pdf.MutableEditsDraft
 import androidx.pdf.PdfDocument
 import androidx.pdf.annotation.content.StampAnnotation
 import androidx.pdf.models.FormEditInfo
+import androidx.pdf.models.FormWidgetInfo
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -214,10 +215,9 @@ class MainActivity : AppCompatActivity(), GateFragmentHost {
         try {
             val editable = requireEditable(document)
             val fields =
-                editable.getFormWidgetInfos(
-                    0,
-                    PdfDocument.FORM_WIDGET_INCLUDE_TEXTFIELD_TYPE,
-                )
+                editable.getFormWidgetInfos(0).filter {
+                    it.widgetType == FormWidgetInfo.WIDGET_TYPE_TEXTFIELD
+                }
             val field = fields.firstOrNull { !it.isReadOnly }
                 ?: error("generated AcroForm contains no writable text field")
             editable.applyEdit(FormEditInfo.createSetText(0, field.widgetIndex, FORM_VALUE))
