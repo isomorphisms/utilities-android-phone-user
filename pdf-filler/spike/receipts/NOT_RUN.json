@@ -1,0 +1,42 @@
+{
+  "schema": "pdf-filler-androidx-engine-gate/v1",
+  "recorded_at_utc": "2026-09-02T00:00:00Z",
+  "device": {
+    "manufacturer": "none",
+    "model": "build workspace",
+    "android_release": "none",
+    "api": null,
+    "sdk_extension_s": null,
+    "abis": []
+  },
+  "engine": "androidx.pdf:1.0.0-beta01",
+  "editable_fragment_available": null,
+  "gates": {
+    "OPEN": {
+      "outcome": "SKIP",
+      "reason": "no Android device was attached to the build workspace",
+      "evidence": "source and static checks only"
+    },
+    "FORM": {
+      "outcome": "SKIP",
+      "reason": "no Android device was attached to the build workspace",
+      "evidence": "source and static checks only"
+    },
+    "SAVE": {
+      "outcome": "SKIP",
+      "reason": "no Android device or independent PDF viewer was available",
+      "evidence": "source and static checks only"
+    },
+    "FLAT_TEXT": {
+      "outcome": "SKIP",
+      "reason": "no Android device or independent PDF viewer was available",
+      "evidence": "representation planned as vector glyph outlines in StampAnnotation"
+    },
+    "CHECK": {
+      "outcome": "SKIP",
+      "reason": "no Android device or independent PDF viewer was available",
+      "evidence": "representation planned as vector paths in StampAnnotation"
+    }
+  },
+  "meaning": "No device gate was executed. These SKIPs must not be promoted from a successful host build."
+}

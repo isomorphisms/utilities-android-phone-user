@@ -1,0 +1,53 @@
+name: PDF filler AndroidX spike
+
+on:
+  push:
+    branches:
+      - pdf-filler-androidx-spike
+    paths:
+      - "pdf-filler/spike/**"
+      - ".github/workflows/pdf-filler-spike.yml"
+  pull_request:
+    paths:
+      - "pdf-filler/spike/**"
+      - ".github/workflows/pdf-filler-spike.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: pdf-filler/spike
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Install API 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Check receipt contract and permissions
+        run: ./ci/check-source.sh
+
+      - name: Build and lint
+        run: gradle --no-daemon :app:assembleDebug :app:lintDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdf-filler-androidx-spike-debug
+          path: pdf-filler/spike/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
