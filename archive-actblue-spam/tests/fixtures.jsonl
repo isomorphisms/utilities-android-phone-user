@@ -1,0 +1,14 @@
+{"id":"personal-1","text":"Can you pick up milk on your way home?","political":false,"fundraising":false}
+{"id":"otp-1","text":"Your verification code is 481992. Do not share this code.","political":false,"fundraising":false}
+{"id":"delivery-1","text":"Your package was delivered at the front door.","political":false,"fundraising":false}
+{"id":"appointment-1","text":"Reminder: your dentist appointment is Thursday at 3:30 PM.","political":false,"fundraising":false}
+{"id":"politics-info-1","text":"Election day is Tuesday. Polls are open from 7 AM to 8 PM.","political":true,"fundraising":false}
+{"id":"politics-info-2","text":"The city council candidate forum starts at 6 PM tonight.","political":true,"fundraising":false}
+{"id":"politics-mi-1","text":"Michigan voters: absentee ballot applications are available now.","political":true,"fundraising":false}
+{"id":"political-fundraising-1","text":"Please donate $10 before midnight to help elect Maria Lopez to Congress.","political":true,"fundraising":true}
+{"id":"political-fundraising-2","text":"Chip in $5 now to help our Senate campaign reach its fundraising goal.","political":true,"fundraising":true}
+{"id":"political-fundraising-3","text":"We are 83% of the way to our goal. Donate now to support the campaign.","political":true,"fundraising":true}
+{"id":"nonpolitical-fundraising-1","text":"Please contribute to the food bank's winter fundraising drive.","political":false,"fundraising":true}
+{"id":"nonpolitical-fundraising-2","text":"The library fundraiser is Saturday. Donations support children's books.","political":false,"fundraising":true}
+{"id":"commercial-1","text":"Flash sale today: save 25 percent on all shoes in the store.","political":false,"fundraising":false}
+{"id":"work-1","text":"Maintenance meeting moved to 2 PM. Line 4 is still down.","political":false,"fundraising":false}
