@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "org.isomorphisms.pdffillerspike"
     compileSdk = 36
+    compileSdkExtension = 19
 
     defaultConfig {
         applicationId = "org.isomorphisms.pdffillerspike"

@@ -21,6 +21,7 @@ test "$skip_count" -eq 5
 
 grep -Fq '1.0.0-beta01' "$root/app/build.gradle.kts"
 grep -Fq 'compileSdk = 36' "$root/app/build.gradle.kts"
+grep -Fq 'compileSdkExtension = 19' "$root/app/build.gradle.kts"
 grep -Fq 'targetSdk = 36' "$root/app/build.gradle.kts"
 
 echo "PASS source contract"

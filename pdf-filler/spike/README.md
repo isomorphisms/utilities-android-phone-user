@@ -22,7 +22,7 @@ later be edited character-by-character.
 
 ## Build
 
-Install JDK 17, Android SDK platform 36, and Gradle 8.13, then run:
+Install JDK 17, Android SDK platform `android-36-ext19`, and Gradle 8.13, then run:
 
 ```sh
 cd pdf-filler/spike
@@ -32,8 +32,10 @@ gradle --no-daemon :app:assembleDebug
 The APK is `app/build/outputs/apk/debug/app-debug.apk`. The repository workflow performs the same
 build and uploads the APK as an artifact.
 
-The app targets API 36, has `minSdk 28`, and requests no permissions. It contains no network,
-analytics, advertising, OCR, or document-management code.
+The AndroidX beta AAR requires compile SDK extension 19. That is a build-time requirement; the
+editable fragment's runtime requirement remains Android 12 plus S extension 18. The app targets
+API 36, has `minSdk 28`, and requests no permissions. It contains no network, analytics,
+advertising, OCR, or document-management code.
 
 ## Device run
 
