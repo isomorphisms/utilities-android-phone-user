@@ -1,5 +1,6 @@
 package org.isomorphisms.pdffillerspike
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
@@ -49,6 +50,8 @@ object VectorMarks {
         )
     }
 
+    // beta01's @IntDef names internal PathOps constants while the public API exposes aliases.
+    @SuppressLint("WrongConstant")
     fun check(): StampAnnotation {
         val inputs =
             listOf(

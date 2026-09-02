@@ -4,6 +4,7 @@ import android.content.Context
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.Locale
 
 object PdfFixtures {
     fun form(context: Context): File =
@@ -80,7 +81,7 @@ object PdfFixtures {
         append("xref\n0 ${objects.size + 1}\n")
         append("0000000000 65535 f \n")
         for (objectNumber in 1..objects.size) {
-            append(String.format("%010d 00000 n \n", offsets[objectNumber]))
+            append(String.format(Locale.ROOT, "%010d 00000 n \n", offsets[objectNumber]))
         }
         append("trailer\n<< /Size ${objects.size + 1} /Root 1 0 R >>\n")
         append("startxref\n$xrefOffset\n%%EOF\n")
