@@ -1,0 +1,60 @@
+name: ActBlue model smoke test
+
+on:
+  push:
+    branches:
+      - archive-actblue-spam
+    paths:
+      - "archive-actblue-spam/tests/**"
+      - ".github/workflows/actblue-model-smoke.yml"
+      - ".gitmodules"
+  workflow_dispatch:
+
+jobs:
+  zeroshot:
+    name: ${{ matrix.id }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: xtremedistil
+            model: MoritzLaurer/xtremedistil-l6-h256-zeroshot-v1.1-all-33
+            revision: c07f66d9cbf781191bee66edfe8ad7856f045781
+          - id: deberta-xsmall
+            model: MoritzLaurer/deberta-v3-xsmall-zeroshot-v1.1-all-33
+            revision: 262ae02f29173eec1c250f90804dc7edc677dcff
+
+    steps:
+      - name: Check out branch without heavyweight submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install inference dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "transformers>=4.44,<6" "torch>=2.2" sentencepiece
+
+      - name: Run pinned model
+        env:
+          MODEL_ID: ${{ matrix.id }}
+          MODEL: ${{ matrix.model }}
+          REVISION: ${{ matrix.revision }}
+          TOKENIZERS_PARALLELISM: "false"
+        run: python archive-actblue-spam/tests/run_zeroshot.py
+
+      - name: Upload predictions and metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: actblue-${{ matrix.id }}-results
+          path: archive-actblue-spam/tests/results/${{ matrix.id }}.json
+          if-no-files-found: warn
