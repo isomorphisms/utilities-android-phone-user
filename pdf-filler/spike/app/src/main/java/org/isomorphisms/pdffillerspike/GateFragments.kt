@@ -10,9 +10,11 @@ import androidx.pdf.viewer.fragment.PdfViewerFragment
 
 interface GateFragmentHost {
     fun onDocumentLoaded(document: PdfDocument)
+    fun onFirstPageRendered()
     fun onDocumentLoadFailed(error: Throwable)
 }
 
+@OptIn(ExperimentalPdfApi::class)
 class ReadOnlyGateFragment : PdfViewerFragment() {
     private val host: GateFragmentHost?
         get() = activity as? GateFragmentHost
@@ -26,6 +28,11 @@ class ReadOnlyGateFragment : PdfViewerFragment() {
         super.onLoadDocumentError(error)
         host?.onDocumentLoadFailed(error)
     }
+
+    override fun onPdfViewCreated(pdfView: PdfView) {
+        super.onPdfViewCreated(pdfView)
+        pdfView.addOnFirstContentLoadListener { host?.onFirstPageRendered() }
+    }
 }
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = GateReport.REQUIRED_EXTENSION)
@@ -37,6 +44,7 @@ class EditableGateFragment : EditablePdfViewerFragment() {
     override fun onPdfViewCreated(pdfView: PdfView) {
         super.onPdfViewCreated(pdfView)
         pdfView.isFormFillingEnabled = true
+        pdfView.addOnFirstContentLoadListener { host?.onFirstPageRendered() }
     }
 
     override fun onLoadDocumentSuccess(document: PdfDocument) {

@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity(), GateFragmentHost {
     private lateinit var compatibilityView: TextView
     private var runState: RunState = RunState.IDLE
     private var busy = false
+    private var lastLoadedEvidence = ""
 
     private val resultsDirectory: File by lazy {
         File(filesDir, "results").apply { mkdirs() }
@@ -171,13 +172,7 @@ class MainActivity : AppCompatActivity(), GateFragmentHost {
     }
 
     override fun onDocumentLoaded(document: PdfDocument) {
-        report.record(
-            Gate.OPEN,
-            Outcome.PASS,
-            "AndroidX completed document loading and rendering",
-            "uri=${document.uri}; pages=${document.pageCount}",
-        )
-        refreshReport()
+        lastLoadedEvidence = "uri=${document.uri}; pages=${document.pageCount}"
         if (busy) return
         busy = true
         when (runState) {
@@ -187,6 +182,16 @@ class MainActivity : AppCompatActivity(), GateFragmentHost {
             RunState.FLAT_RESULT -> lifecycleScope.launch { verifyFlatResult(document) }
             RunState.IDLE, RunState.OPEN_ONLY -> busy = false
         }
+    }
+
+    override fun onFirstPageRendered() {
+        report.record(
+            Gate.OPEN,
+            Outcome.PASS,
+            "AndroidX produced the first visible page bitmap",
+            lastLoadedEvidence,
+        )
+        refreshReport()
     }
 
     override fun onDocumentLoadFailed(error: Throwable) {

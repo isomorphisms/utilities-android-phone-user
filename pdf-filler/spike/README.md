@@ -4,7 +4,7 @@ This is the smallest executable compatibility spike for the five questions in th
 filler plan. It is a gate, not the editor.
 
 ```text
-OPEN      AndroidX finishes loading and rendering a generated PDF
+OPEN      AndroidX reports its first visible page bitmap for a generated PDF
 FORM      a generated AcroForm text field is enumerated, filled, saved, and read after reopen
 SAVE      another installed PDF viewer visibly shows the saved AcroForm value
 FLAT_TEXT another installed PDF viewer visibly shows typed text converted to vector outlines
