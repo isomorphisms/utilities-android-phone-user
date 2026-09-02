@@ -1,36 +1,22 @@
 # Archive ActBlue spam
 
-Goal: reduce political-fundraising SMS interruptions by classifying messages locally on the phone and auto-archiving only messages with very high confidence. The first target is ActBlue-linked fundraising traffic. Do not report messages as spam automatically.
+Goal: reduce political-fundraising SMS clutter by classifying messages locally on the phone and hiding high-confidence ActBlue fundraising messages from the normal human reading flow. The first target is ActBlue-linked fundraising traffic. Do not report messages as spam automatically.
 
-## Important Android boundary
+The requirement is **not** to stop the carrier/Android SMS stack from receiving the message. It is to prevent the user from having to visually filter through five fundraising messages to find a message from family, work, or another real correspondent.
 
-There are two materially different implementations.
+## First useful architecture
 
-### 1. Companion/read-only app
+A read-only SMS utility is sufficient for the first useful version:
 
-A non-default SMS app can read SMS when Android grants the relevant permission, but it cannot write the system SMS provider. It therefore cannot reliably remove/archive a message before the user's normal SMS app receives and notifies on it.
+1. read the SMS provider;
+2. classify messages locally;
+3. present a normal filtered inbox containing messages the user likely wants to see;
+4. put high-confidence ActBlue fundraising messages in a separate local archive view;
+5. keep every hidden message recoverable and auditable.
 
-This mode is useful for collecting labeled training data and evaluating the classifier, but it cannot satisfy the final no-interruption requirement by itself.
+This means becoming the default SMS app is **not a prerequisite** for the useful filtering feature. A later default-SMS implementation may allow tighter control over storage and notifications, but it is a separate enhancement rather than the starting requirement.
 
-### 2. Default SMS app
-
-Android delivers `Telephony.Sms.Intents.SMS_DELIVER_ACTION` only to the user's default SMS app. The default SMS app is responsible for writing the incoming message and notifying the user. That gives us the interception point we actually need:
-
-1. receive the SMS PDU;
-2. reconstruct the message;
-3. classify locally;
-4. if ordinary: write to inbox and notify;
-5. if allowed-state political message: put in `hold`/normal inbox according to user policy;
-6. if high-confidence ActBlue spam: write to our archive store and do not notify;
-7. retain enough information to restore/reclassify a false positive.
-
-Official Android references:
-
-- https://developer.android.com/reference/android/provider/Telephony
-- https://developer.android.com/reference/android/provider/Telephony.Sms.Intents
-- https://developer.android.com/guide/topics/permissions/default-handlers
-
-This probably fits best with the separate simple SMS/text app work: the filtering layer belongs immediately before that app commits an incoming SMS to its visible inbox.
+The filtered inbox can therefore sit on top of the existing read-only SMS reader work.
 
 ## Policy: three outcomes, not just spam/not-spam
 
@@ -48,7 +34,7 @@ ARCHIVE_ACTBLUE
 allowed_states = ["MI"]
 ```
 
-A message that otherwise looks like ActBlue fundraising but has credible Michigan relevance is not auto-archived. Initially, err toward `HOLD_ALLOWED_STATE` rather than trying to infer whether every mention of Michigan is sincere/local enough.
+A message that otherwise looks like ActBlue fundraising but has credible Michigan relevance is not auto-hidden from the main political-message view. Initially, err toward `HOLD_ALLOWED_STATE` rather than trying to infer whether every mention of Michigan is sincere/local enough.
 
 ## Classifier
 
@@ -82,13 +68,11 @@ ALLOWED_STATE
 
 Store labeled examples locally. Incremental SGD/logistic regression or a perceptron-style update is enough for an initial implementation. No TensorFlow/PyTorch runtime is required.
 
-For safety, training and deployment thresholds are separate. The model can learn from every label while auto-archive remains conservative.
+For safety, training and deployment thresholds are separate. The model can learn from every label while automatic hiding remains conservative.
 
 ## High-precision decision rule
 
 Do not interpret a raw model score as trustworthy probability without calibration. Start with a conservative score gate.
-
-Suggested initial logic:
 
 ```text
 if allowed_state_relevance(message):
@@ -102,6 +86,27 @@ else:
 `strong_actblue_evidence` can include an ActBlue domain/template match or multiple independent fundraising indicators. This makes the first version intentionally biased toward false negatives rather than false positives.
 
 Later, once there is enough labeled data, calibrate the model score on a held-out local validation set and choose `archive_threshold` against an explicit maximum false-positive target.
+
+## Presentation layer
+
+The important product behavior is simple:
+
+```text
+NORMAL INBOX
+  family
+  friends
+  work
+  transactional messages
+  ambiguous messages
+  locally relevant political messages
+
+ARCHIVED POLITICAL FUNDRAISING
+  high-confidence ActBlue messages
+```
+
+The user should not need to delete, report, swipe, or mentally skip the archived messages during ordinary SMS use.
+
+An unread count for the normal inbox should exclude `ARCHIVE_ACTBLUE` messages. The archive can have its own quiet count if useful, but it should not dominate the main reading flow.
 
 ## Audit/recovery
 
@@ -121,7 +126,7 @@ reason
 The archive UI needs:
 
 - newest first;
-- restore to inbox;
+- restore/show in normal inbox;
 - `this was correct`;
 - `false positive`;
 - `allow messages like this`;
@@ -131,17 +136,15 @@ A false positive should immediately become a negative training example.
 
 ## Development stages
 
-1. **Read-only shadow classifier** — run against existing SMS without changing anything; collect labels and precision/recall.
-2. **Manual archive suggestion** — show what would have been archived.
-3. **High-confidence auto-archive** — only after the observed false-positive rate is acceptable.
-4. **Default-SMS interception** — integrate with the simple SMS app so high-confidence messages never generate an inbox notification.
-5. **State/candidate relevance refinement** — improve the `allowed_states` hold using accumulated labels.
+1. **Read-only shadow classifier** — run against existing SMS without changing the displayed inbox; collect labels and precision/recall.
+2. **Filtered inbox** — hide high-confidence matches from the normal reading list and expose them under `Archived political fundraising`.
+3. **Training feedback** — restore/false-positive actions update local labels.
+4. **State hold** — preserve allowed-state messages from automatic hiding.
+5. **Optional default-SMS integration** — only if later desired for notification/storage control.
 
 ## Acceptance tests
 
 The first useful test corpus should contain ordinary personal texts, transactional/OTP texts, delivery/work messages, legitimate local political messages, and a large set of ActBlue-linked fundraising messages.
-
-Minimum behavioral checks:
 
 ```text
 ordinary personal SMS              -> INBOX
@@ -152,4 +155,8 @@ Michigan-relevant political SMS    -> HOLD_ALLOWED_STATE
 false positive restored by user    -> becomes KEEP training example
 ```
 
-The success metric is interruption reduction subject to a strict false-positive ceiling, not maximum spam recall.
+Primary success metric:
+
+> How many nuisance messages disappear from the ordinary human reading flow without hiding messages the user actually wanted to see?
+
+Maximum recall is not the goal. A conservative classifier that removes half the ActBlue clutter can already materially improve the inbox.
