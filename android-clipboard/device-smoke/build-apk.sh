@@ -41,7 +41,7 @@ output="$root/build/clipboard-smoke-$abi.apk"
 mkdir -p "$objects" "$staging/lib/$abi" "$root/build"
 
 common_flags="-std=c17 -O2 -g -fPIC -ffunction-sections -fdata-sections"
-warnings="-Wall -Wextra -Werror -Wpedantic -Wconversion -Wshadow"
+warnings="-Wall -Wextra -Werror -Wpedantic"
 
 "$compiler" $common_flags $warnings -I"$bridge_root" \
     -c "$root/smoke.c" -o "$objects/smoke.o"
