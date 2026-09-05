@@ -15,7 +15,7 @@ typedef struct {
     int detach;
 } AttachedEnvironment;
 
-static int clear_exception(JNIEnv *environment) {
+static int take_exception(JNIEnv *environment) {
     if ((*environment)->ExceptionCheck(environment) == JNI_FALSE) {
         return 0;
     }
@@ -23,13 +23,15 @@ static int clear_exception(JNIEnv *environment) {
     return 1;
 }
 
-/* NewStringUTF is safe here only because every caller supplies fixed ASCII. */
+static int object_failed(JNIEnv *environment, const void *object) {
+    const int exception = take_exception(environment);
+    return exception || object == NULL;
+}
+
+/* NewStringUTF is used only for fixed ASCII framework names/keys. */
 static jstring new_ascii(JNIEnv *environment, const char *ascii) {
     jstring string = (*environment)->NewStringUTF(environment, ascii);
-    if (string == NULL || clear_exception(environment)) {
-        return NULL;
-    }
-    return string;
+    return object_failed(environment, string) ? NULL : string;
 }
 
 static ClipboardStatus acquire_environment(AttachedEnvironment *attached) {
@@ -67,21 +69,24 @@ static void release_environment(AttachedEnvironment *attached) {
 static ClipboardStatus get_api_level(JNIEnv *environment, jint *out_api_level) {
     jclass version_class = (*environment)->FindClass(
         environment, "android/os/Build$VERSION");
-    if (version_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, version_class)) {
         return CLIPBOARD_JNI_ERROR;
     }
+
     const jfieldID sdk_int = (*environment)->GetStaticFieldID(
         environment, version_class, "SDK_INT", "I");
-    if (sdk_int == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)sdk_int)) {
         (*environment)->DeleteLocalRef(environment, version_class);
         return CLIPBOARD_JNI_ERROR;
     }
+
     const jint api_level = (*environment)->GetStaticIntField(
         environment, version_class, sdk_int);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         (*environment)->DeleteLocalRef(environment, version_class);
         return CLIPBOARD_JNI_ERROR;
     }
+
     (*environment)->DeleteLocalRef(environment, version_class);
     *out_api_level = api_level;
     return CLIPBOARD_OK;
@@ -120,35 +125,39 @@ ClipboardStatus clipboard_bridge_init(JNIEnv *environment, jobject context) {
     jobject global_manager = NULL;
 
     context_class = (*environment)->GetObjectClass(environment, context);
-    if (context_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, context_class)) {
         goto cleanup;
     }
     const jmethodID get_system_service = (*environment)->GetMethodID(
         environment, context_class, "getSystemService",
         "(Ljava/lang/String;)Ljava/lang/Object;");
-    if (get_system_service == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)get_system_service)) {
         goto cleanup;
     }
+
     service_name = new_ascii(environment, "clipboard");
     if (service_name == NULL) {
         goto cleanup;
     }
     manager = (*environment)->CallObjectMethod(
         environment, context, get_system_service, service_name);
-    if (manager == NULL || clear_exception(environment)) {
+    if (object_failed(environment, manager)) {
         goto cleanup;
     }
+
     manager_class = (*environment)->FindClass(
         environment, "android/content/ClipboardManager");
-    if (manager_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, manager_class)) {
         goto cleanup;
     }
-    if ((*environment)->IsInstanceOf(environment, manager, manager_class) != JNI_TRUE ||
-        clear_exception(environment)) {
+    const jboolean is_manager = (*environment)->IsInstanceOf(
+        environment, manager, manager_class);
+    if (take_exception(environment) || is_manager != JNI_TRUE) {
         goto cleanup;
     }
+
     global_manager = (*environment)->NewGlobalRef(environment, manager);
-    if (global_manager == NULL || clear_exception(environment)) {
+    if (object_failed(environment, global_manager)) {
         goto cleanup;
     }
 
@@ -158,6 +167,7 @@ ClipboardStatus clipboard_bridge_init(JNIEnv *environment, jobject context) {
     status = CLIPBOARD_OK;
 
 cleanup:
+    (void)take_exception(environment);
     if (global_manager != NULL) {
         (*environment)->DeleteGlobalRef(environment, global_manager);
     }
@@ -180,19 +190,18 @@ ClipboardStatus clipboard_bridge_shutdown(void) {
     if (clipboard_vm == NULL || clipboard_manager == NULL) {
         return CLIPBOARD_NOT_INITIALIZED;
     }
+
     AttachedEnvironment attached;
     const ClipboardStatus status = acquire_environment(&attached);
     if (status != CLIPBOARD_OK) {
         return status;
     }
 
-    JavaVM *vm = clipboard_vm;
     jobject manager = clipboard_manager;
     (*attached.environment)->DeleteGlobalRef(attached.environment, manager);
     clipboard_manager = NULL;
     release_environment(&attached);
     clipboard_vm = NULL;
-    (void)vm;
     return CLIPBOARD_OK;
 }
 
@@ -214,20 +223,21 @@ ClipboardStatus clipboard_has_text(int *out_has_text) {
     jstring text_pattern = NULL;
 
     manager_class = (*environment)->GetObjectClass(environment, clipboard_manager);
-    if (manager_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, manager_class)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jmethodID get_description = (*environment)->GetMethodID(
         environment, manager_class, "getPrimaryClipDescription",
         "()Landroid/content/ClipDescription;");
-    if (get_description == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)get_description)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+
     description = (*environment)->CallObjectMethod(
         environment, clipboard_manager, get_description);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
@@ -235,17 +245,19 @@ ClipboardStatus clipboard_has_text(int *out_has_text) {
         status = CLIPBOARD_NO_VISIBLE_CLIP;
         goto cleanup;
     }
+
     description_class = (*environment)->GetObjectClass(environment, description);
-    if (description_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, description_class)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jmethodID has_mime_type = (*environment)->GetMethodID(
         environment, description_class, "hasMimeType", "(Ljava/lang/String;)Z");
-    if (has_mime_type == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)has_mime_type)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+
     text_pattern = new_ascii(environment, "text/*");
     if (text_pattern == NULL) {
         status = CLIPBOARD_JNI_ERROR;
@@ -253,14 +265,16 @@ ClipboardStatus clipboard_has_text(int *out_has_text) {
     }
     const jboolean has_text = (*environment)->CallBooleanMethod(
         environment, description, has_mime_type, text_pattern);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+
     *out_has_text = has_text == JNI_TRUE ? 1 : 0;
     status = CLIPBOARD_OK;
 
 cleanup:
+    (void)take_exception(environment);
     if (text_pattern != NULL) {
         (*environment)->DeleteLocalRef(environment, text_pattern);
     }
@@ -301,19 +315,20 @@ ClipboardStatus clipboard_get_utf8(char **out_bytes, size_t *out_len) {
     const jchar *characters = NULL;
 
     manager_class = (*environment)->GetObjectClass(environment, clipboard_manager);
-    if (manager_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, manager_class)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jmethodID get_primary_clip = (*environment)->GetMethodID(
         environment, manager_class, "getPrimaryClip", "()Landroid/content/ClipData;");
-    if (get_primary_clip == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)get_primary_clip)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+
     clip = (*environment)->CallObjectMethod(
         environment, clipboard_manager, get_primary_clip);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
@@ -321,22 +336,28 @@ ClipboardStatus clipboard_get_utf8(char **out_bytes, size_t *out_len) {
         status = CLIPBOARD_NO_VISIBLE_CLIP;
         goto cleanup;
     }
+
     clip_class = (*environment)->GetObjectClass(environment, clip);
-    if (clip_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, clip_class)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jmethodID get_item_count = (*environment)->GetMethodID(
         environment, clip_class, "getItemCount", "()I");
-    const jmethodID get_item_at = (*environment)->GetMethodID(
-        environment, clip_class, "getItemAt", "(I)Landroid/content/ClipData$Item;");
-    if (get_item_count == NULL || get_item_at == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)get_item_count)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+    const jmethodID get_item_at = (*environment)->GetMethodID(
+        environment, clip_class, "getItemAt", "(I)Landroid/content/ClipData$Item;");
+    if (object_failed(environment, (const void *)get_item_at)) {
+        status = CLIPBOARD_JNI_ERROR;
+        goto cleanup;
+    }
+
     const jint item_count = (*environment)->CallIntMethod(
         environment, clip, get_item_count);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
@@ -344,24 +365,26 @@ ClipboardStatus clipboard_get_utf8(char **out_bytes, size_t *out_len) {
         status = CLIPBOARD_NO_TEXT;
         goto cleanup;
     }
+
     item = (*environment)->CallObjectMethod(environment, clip, get_item_at, 0);
-    if (item == NULL || clear_exception(environment)) {
+    if (object_failed(environment, item)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     item_class = (*environment)->GetObjectClass(environment, item);
-    if (item_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, item_class)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jmethodID get_text = (*environment)->GetMethodID(
         environment, item_class, "getText", "()Ljava/lang/CharSequence;");
-    if (get_text == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)get_text)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+
     text = (*environment)->CallObjectMethod(environment, item, get_text);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
@@ -369,29 +392,32 @@ ClipboardStatus clipboard_get_utf8(char **out_bytes, size_t *out_len) {
         status = CLIPBOARD_NO_TEXT;
         goto cleanup;
     }
+
     text_class = (*environment)->GetObjectClass(environment, text);
-    if (text_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, text_class)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jmethodID to_string = (*environment)->GetMethodID(
         environment, text_class, "toString", "()Ljava/lang/String;");
-    if (to_string == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)to_string)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
+
     string = (jstring)(*environment)->CallObjectMethod(environment, text, to_string);
-    if (string == NULL || clear_exception(environment)) {
+    if (object_failed(environment, string)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     const jsize character_count = (*environment)->GetStringLength(environment, string);
-    if (clear_exception(environment)) {
+    if (take_exception(environment)) {
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
     characters = (*environment)->GetStringChars(environment, string, NULL);
-    if (characters == NULL || clear_exception(environment)) {
+    if (object_failed(environment, characters)) {
+        characters = NULL;
         status = CLIPBOARD_JNI_ERROR;
         goto cleanup;
     }
@@ -403,6 +429,7 @@ ClipboardStatus clipboard_get_utf8(char **out_bytes, size_t *out_len) {
         out_len));
 
 cleanup:
+    (void)take_exception(environment);
     if (characters != NULL) {
         (*environment)->ReleaseStringChars(environment, string, characters);
     }
@@ -452,22 +479,23 @@ static ClipboardStatus make_plain_clip(
 
     *out_clip = NULL;
     clip_class = (*environment)->FindClass(environment, "android/content/ClipData");
-    if (clip_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, clip_class)) {
         goto cleanup;
     }
     const jmethodID new_plain_text = (*environment)->GetStaticMethodID(
         environment, clip_class, "newPlainText",
         "(Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Landroid/content/ClipData;");
-    if (new_plain_text == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)new_plain_text)) {
         goto cleanup;
     }
+
     label = (*environment)->NewString(environment, &empty_unit, 0);
-    if (label == NULL || clear_exception(environment)) {
+    if (object_failed(environment, label)) {
         goto cleanup;
     }
     clip = (*environment)->CallStaticObjectMethod(
         environment, clip_class, new_plain_text, label, text);
-    if (clip == NULL || clear_exception(environment)) {
+    if (object_failed(environment, clip)) {
         goto cleanup;
     }
 
@@ -481,53 +509,71 @@ static ClipboardStatus make_plain_clip(
             const jmethodID get_description = (*environment)->GetMethodID(
                 environment, clip_class, "getDescription",
                 "()Landroid/content/ClipDescription;");
-            if (get_description == NULL || clear_exception(environment)) {
+            if (object_failed(environment, (const void *)get_description)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
             description = (*environment)->CallObjectMethod(
                 environment, clip, get_description);
-            if (description == NULL || clear_exception(environment)) {
+            if (object_failed(environment, description)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
+
             description_class = (*environment)->GetObjectClass(environment, description);
+            if (object_failed(environment, description_class)) {
+                status = CLIPBOARD_JNI_ERROR;
+                goto cleanup;
+            }
             bundle_class = (*environment)->FindClass(
                 environment, "android/os/PersistableBundle");
-            if (description_class == NULL || bundle_class == NULL ||
-                clear_exception(environment)) {
+            if (object_failed(environment, bundle_class)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
+
             const jmethodID bundle_constructor = (*environment)->GetMethodID(
                 environment, bundle_class, "<init>", "()V");
+            if (object_failed(environment, (const void *)bundle_constructor)) {
+                status = CLIPBOARD_JNI_ERROR;
+                goto cleanup;
+            }
             const jmethodID put_boolean = (*environment)->GetMethodID(
                 environment, bundle_class, "putBoolean", "(Ljava/lang/String;Z)V");
+            if (object_failed(environment, (const void *)put_boolean)) {
+                status = CLIPBOARD_JNI_ERROR;
+                goto cleanup;
+            }
             const jmethodID set_extras = (*environment)->GetMethodID(
                 environment, description_class, "setExtras",
                 "(Landroid/os/PersistableBundle;)V");
-            if (bundle_constructor == NULL || put_boolean == NULL ||
-                set_extras == NULL || clear_exception(environment)) {
+            if (object_failed(environment, (const void *)set_extras)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
+
             bundle = (*environment)->NewObject(
                 environment, bundle_class, bundle_constructor);
-            sensitive_key = new_ascii(
-                environment, "android.content.extra.IS_SENSITIVE");
-            if (bundle == NULL || sensitive_key == NULL || clear_exception(environment)) {
+            if (object_failed(environment, bundle)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
+            sensitive_key = new_ascii(
+                environment, "android.content.extra.IS_SENSITIVE");
+            if (sensitive_key == NULL) {
+                status = CLIPBOARD_JNI_ERROR;
+                goto cleanup;
+            }
+
             (*environment)->CallVoidMethod(
                 environment, bundle, put_boolean, sensitive_key, JNI_TRUE);
-            if (clear_exception(environment)) {
+            if (take_exception(environment)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
             (*environment)->CallVoidMethod(
                 environment, description, set_extras, bundle);
-            if (clear_exception(environment)) {
+            if (take_exception(environment)) {
                 status = CLIPBOARD_JNI_ERROR;
                 goto cleanup;
             }
@@ -539,6 +585,7 @@ static ClipboardStatus make_plain_clip(
     status = CLIPBOARD_OK;
 
 cleanup:
+    (void)take_exception(environment);
     if (sensitive_key != NULL) {
         (*environment)->DeleteLocalRef(environment, sensitive_key);
     }
@@ -569,18 +616,19 @@ cleanup:
 static ClipboardStatus set_primary_clip(JNIEnv *environment, jobject clip) {
     jclass manager_class = (*environment)->GetObjectClass(
         environment, clipboard_manager);
-    if (manager_class == NULL || clear_exception(environment)) {
+    if (object_failed(environment, manager_class)) {
         return CLIPBOARD_JNI_ERROR;
     }
     const jmethodID set_primary = (*environment)->GetMethodID(
         environment, manager_class, "setPrimaryClip", "(Landroid/content/ClipData;)V");
-    if (set_primary == NULL || clear_exception(environment)) {
+    if (object_failed(environment, (const void *)set_primary)) {
         (*environment)->DeleteLocalRef(environment, manager_class);
         return CLIPBOARD_JNI_ERROR;
     }
+
     (*environment)->CallVoidMethod(
         environment, clipboard_manager, set_primary, clip);
-    const int failed = clear_exception(environment);
+    const int failed = take_exception(environment);
     (*environment)->DeleteLocalRef(environment, manager_class);
     return failed ? CLIPBOARD_JNI_ERROR : CLIPBOARD_OK;
 }
@@ -609,10 +657,11 @@ ClipboardStatus clipboard_set_utf8(const char *bytes, size_t len, int sensitive)
         return status;
     }
     JNIEnv *environment = attached.environment;
+
     jstring text = (*environment)->NewString(
         environment, (const jchar *)units, (jsize)unit_count);
     free(units);
-    if (text == NULL || clear_exception(environment)) {
+    if (object_failed(environment, text)) {
         release_environment(&attached);
         return CLIPBOARD_JNI_ERROR;
     }
@@ -622,6 +671,7 @@ ClipboardStatus clipboard_set_utf8(const char *bytes, size_t len, int sensitive)
     if (status == CLIPBOARD_OK) {
         status = set_primary_clip(environment, clip);
     }
+    (void)take_exception(environment);
     if (clip != NULL) {
         (*environment)->DeleteLocalRef(environment, clip);
     }
@@ -637,6 +687,7 @@ ClipboardStatus clipboard_clear(void) {
         return status;
     }
     JNIEnv *environment = attached.environment;
+
     jint api_level = 0;
     status = get_api_level(environment, &api_level);
     if (status != CLIPBOARD_OK) {
@@ -647,20 +698,20 @@ ClipboardStatus clipboard_clear(void) {
     if (api_level >= 28) {
         jclass manager_class = (*environment)->GetObjectClass(
             environment, clipboard_manager);
-        if (manager_class == NULL || clear_exception(environment)) {
+        if (object_failed(environment, manager_class)) {
             release_environment(&attached);
             return CLIPBOARD_JNI_ERROR;
         }
         const jmethodID clear_primary = (*environment)->GetMethodID(
             environment, manager_class, "clearPrimaryClip", "()V");
-        if (clear_primary == NULL || clear_exception(environment)) {
+        if (object_failed(environment, (const void *)clear_primary)) {
             (*environment)->DeleteLocalRef(environment, manager_class);
             release_environment(&attached);
             return CLIPBOARD_JNI_ERROR;
         }
         (*environment)->CallVoidMethod(
             environment, clipboard_manager, clear_primary);
-        const int failed = clear_exception(environment);
+        const int failed = take_exception(environment);
         (*environment)->DeleteLocalRef(environment, manager_class);
         release_environment(&attached);
         return failed ? CLIPBOARD_JNI_ERROR : CLIPBOARD_OK;
@@ -668,7 +719,7 @@ ClipboardStatus clipboard_clear(void) {
 
     const jchar empty_unit = 0;
     jstring empty = (*environment)->NewString(environment, &empty_unit, 0);
-    if (empty == NULL || clear_exception(environment)) {
+    if (object_failed(environment, empty)) {
         release_environment(&attached);
         return CLIPBOARD_JNI_ERROR;
     }
@@ -677,6 +728,7 @@ ClipboardStatus clipboard_clear(void) {
     if (status == CLIPBOARD_OK) {
         status = set_primary_clip(environment, clip);
     }
+    (void)take_exception(environment);
     if (clip != NULL) {
         (*environment)->DeleteLocalRef(environment, clip);
     }
