@@ -21,9 +21,18 @@ start_output=$("$adb" shell am start -W -n "$component" 2>&1) || {
     exit 1
 }
 printf '%s\n' "$start_output"
-sleep 1
 
-receipt=$($adb logcat -d -s ClipboardSmoke:I '*:S')
+receipt=''
+attempt=0
+while [ "$attempt" -lt 10 ]; do
+    receipt=$("$adb" logcat -d -s ClipboardSmoke:I '*:S')
+    if printf '%s\n' "$receipt" | grep -E 'CLIPBOARD_SMOKE (PASS|FAIL)' >/dev/null; then
+        break
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+done
+
 printf '%s\n' "$receipt"
 if ! printf '%s\n' "$receipt" | grep -F 'CLIPBOARD_SMOKE PASS' >/dev/null; then
     printf '%s\n' 'FAIL: no clipboard smoke PASS receipt; relevant Android log follows' >&2
