@@ -9,6 +9,7 @@
 #define LOG_TAG "ClipboardSmoke"
 
 static int failures = 0;
+static int ran = 0;
 
 static void fail_status(const char *step, ClipboardStatus status) {
     __android_log_print(
@@ -33,23 +34,7 @@ static int expect_ok(const char *step, ClipboardStatus status) {
     return 0;
 }
 
-__attribute__((visibility("default")))
-void ANativeActivity_onCreate(
-    ANativeActivity *activity,
-    void *saved_state,
-    size_t saved_state_size) {
-    (void)saved_state;
-    (void)saved_state_size;
-    failures = 0;
-
-    if (activity == NULL || activity->env == NULL || activity->clazz == NULL) {
-        __android_log_print(
-            ANDROID_LOG_ERROR,
-            LOG_TAG,
-            "CLIPBOARD_SMOKE FAIL invalid NativeActivity boundary");
-        return;
-    }
-
+static void run_smoke(ANativeActivity *activity) {
     ClipboardStatus status = clipboard_bridge_init(activity->env, activity->clazz);
     if (!expect_ok("init", status)) {
         goto finish;
@@ -122,4 +107,34 @@ finish:
             activity->sdkVersion);
     }
     ANativeActivity_finish(activity);
+}
+
+static void on_window_focus_changed(ANativeActivity *activity, int has_focus) {
+    if (has_focus == 0 || ran != 0) {
+        return;
+    }
+    ran = 1;
+    run_smoke(activity);
+}
+
+__attribute__((visibility("default")))
+void ANativeActivity_onCreate(
+    ANativeActivity *activity,
+    void *saved_state,
+    size_t saved_state_size) {
+    (void)saved_state;
+    (void)saved_state_size;
+    failures = 0;
+    ran = 0;
+
+    if (activity == NULL || activity->env == NULL || activity->clazz == NULL ||
+        activity->callbacks == NULL) {
+        __android_log_print(
+            ANDROID_LOG_ERROR,
+            LOG_TAG,
+            "CLIPBOARD_SMOKE FAIL invalid NativeActivity boundary");
+        return;
+    }
+
+    activity->callbacks->onWindowFocusChanged = on_window_focus_changed;
 }
