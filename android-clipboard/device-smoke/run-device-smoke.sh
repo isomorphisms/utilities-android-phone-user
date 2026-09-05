@@ -8,7 +8,7 @@ component="$package/android.app.NativeActivity"
 apk=${1:-}
 
 if [ -z "$apk" ]; then
-    apk=$($root/build-apk.sh)
+    apk=$(sh "$root/build-apk.sh")
 fi
 
 "$adb" get-state >/dev/null
