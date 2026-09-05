@@ -15,10 +15,19 @@ fi
 "$adb" uninstall "$package" >/dev/null 2>&1 || true
 "$adb" logcat -c
 "$adb" install "$apk" >/dev/null
-"$adb" shell am start -W -n "$component" >/dev/null
+start_output=$("$adb" shell am start -W -n "$component" 2>&1) || {
+    printf '%s\n' "$start_output"
+    "$adb" logcat -d
+    exit 1
+}
+printf '%s\n' "$start_output"
 sleep 1
 
 receipt=$($adb logcat -d -s ClipboardSmoke:I '*:S')
 printf '%s\n' "$receipt"
-printf '%s\n' "$receipt" | grep -F 'CLIPBOARD_SMOKE PASS' >/dev/null
+if ! printf '%s\n' "$receipt" | grep -F 'CLIPBOARD_SMOKE PASS' >/dev/null; then
+    printf '%s\n' 'FAIL: no clipboard smoke PASS receipt; relevant Android log follows' >&2
+    "$adb" logcat -d | grep -E 'ClipboardSmoke|clipboardsmoke|NativeActivity|AndroidRuntime|linker|libclipboard_smoke' || true
+    exit 1
+fi
 printf '%s\n' 'PASS: foreground Android ClipboardManager smoke receipt'
