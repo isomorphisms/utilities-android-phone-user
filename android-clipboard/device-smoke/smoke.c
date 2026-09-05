@@ -40,6 +40,7 @@ void ANativeActivity_onCreate(
     size_t saved_state_size) {
     (void)saved_state;
     (void)saved_state_size;
+    failures = 0;
 
     if (activity == NULL || activity->env == NULL || activity->clazz == NULL) {
         __android_log_print(
